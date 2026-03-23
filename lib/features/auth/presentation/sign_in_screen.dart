@@ -47,8 +47,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
 
-    ref.listen(authViewModelProvider, (_, next) {
+    ref.listen(authViewModelProvider, (prev, next) {
       next.whenOrNull(
+        data: (_) {
+          if (prev?.isLoading == true) {
+            context.router.replaceAll([const MainShellRoute()]);
+          }
+        },
         error: (error, _) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

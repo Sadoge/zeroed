@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'package:zeroed/core/router/app_router.dart';
 import 'package:zeroed/core/theme/app_colors.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
 import 'package:zeroed/core/theme/app_text_styles.dart';
@@ -48,8 +49,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
 
-    ref.listen(authViewModelProvider, (_, next) {
+    ref.listen(authViewModelProvider, (prev, next) {
       next.whenOrNull(
+        data: (_) {
+          if (prev?.isLoading == true) {
+            context.router.replaceAll([const OnboardingRoute()]);
+          }
+        },
         error: (error, _) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

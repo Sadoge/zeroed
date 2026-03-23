@@ -3,38 +3,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
 
+import 'package:zeroed/core/services/supabase_service.dart';
 import 'package:zeroed/core/theme/app_colors.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
 import 'package:zeroed/core/theme/app_text_styles.dart';
+import 'package:zeroed/features/clients/presentation/client_list_view_model.dart';
+import 'package:zeroed/models/client_model.dart';
 import 'package:zeroed/shared/widgets/app_text_field.dart';
 
-part 'client_list_screen.g.dart';
+// ─── Avatar color from name ─────────────────────────────────
 
-// ─── Hardcoded clients (wired to real data in Step 13) ───────
-
-final _demoClients = [
-  DemoClient('Acme Corp', 'billing@acmecorp.com', 5, 12400, AppColors.accent),
-  DemoClient('Bright Studio', 'hello@brightstudio.com', 3, 4200, const Color(0xFF6366F1)),
-  DemoClient('Nova Digital', 'admin@novadigital.io', 7, 18600, const Color(0xFFF59E0B)),
-  DemoClient('Quantum Labs', 'info@quantumlabs.co', 2, 3000, const Color(0xFFEC4899)),
+const _avatarColors = [
+  AppColors.accent,
+  Color(0xFF6366F1),
+  Color(0xFFF59E0B),
+  Color(0xFFEC4899),
+  Color(0xFF14B8A6),
+  Color(0xFF8B5CF6),
+  Color(0xFFEF4444),
+  Color(0xFF3B82F6),
 ];
 
-class DemoClient {
-  const DemoClient(this.name, this.email, this.invoiceCount, this.totalBilled, this.avatarColor);
-  final String name;
-  final String email;
-  final int invoiceCount;
-  final double totalBilled;
-  final Color avatarColor;
-}
-
-@riverpod
-List<DemoClient> filteredClients(Ref ref, String query) {
-  if (query.isEmpty) return _demoClients;
-  final q = query.toLowerCase();
-  return _demoClients.where((c) => c.name.toLowerCase().contains(q)).toList();
+Color _avatarColor(String name) {
+  final hash = name.codeUnits.fold(0, (sum, c) => sum + c);
+  return _avatarColors[hash % _avatarColors.length];
 }
 
 // ─── Screen ──────────────────────────────────────────────────
@@ -59,15 +53,7 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final clients = ref.watch(filteredClientsProvider(_query));
-
-    // Group by first letter
-    final grouped = <String, List<DemoClient>>{};
-    for (final c in clients) {
-      final letter = c.name[0].toUpperCase();
-      grouped.putIfAbsent(letter, () => []).add(c);
-    }
-    final sortedKeys = grouped.keys.toList()..sort();
+    final clientsAsync = ref.watch(clientListProvider);
 
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
@@ -89,16 +75,47 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
               ),
               const SizedBox(height: AppSpacing.xl),
               Expanded(
-                child: clients.isEmpty
-                    ? _buildEmpty()
-                    : ListView.builder(
-                        itemCount: sortedKeys.length,
-                        itemBuilder: (context, i) {
-                          final letter = sortedKeys[i];
-                          final group = grouped[letter]!;
-                          return _buildGroup(letter, group);
-                        },
+                child: clientsAsync.when(
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  error: (e, _) => Center(
+                    child: Text(
+                      'Failed to load clients',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppColors.textMuted,
                       ),
+                    ),
+                  ),
+                  data: (allClients) {
+                    final clients = _query.isEmpty
+                        ? allClients
+                        : allClients
+                            .where((c) => c.name
+                                .toLowerCase()
+                                .contains(_query.toLowerCase()))
+                            .toList();
+
+                    if (clients.isEmpty) return _buildEmpty();
+
+                    final grouped = <String, List<Client>>{};
+                    for (final c in clients) {
+                      final letter = c.name[0].toUpperCase();
+                      grouped.putIfAbsent(letter, () => []).add(c);
+                    }
+                    final sortedKeys = grouped.keys.toList()..sort();
+
+                    return ListView.builder(
+                      itemCount: sortedKeys.length,
+                      itemBuilder: (context, i) {
+                        final letter = sortedKeys[i];
+                        final group = grouped[letter]!;
+                        return _buildGroup(letter, group);
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -134,7 +151,7 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
     );
   }
 
-  Widget _buildGroup(String letter, List<DemoClient> clients) {
+  Widget _buildGroup(String letter, List<Client> clients) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -214,9 +231,26 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: save client via repository
-                  Navigator.of(ctx).pop();
+                onPressed: () async {
+                  final name = nameCtrl.text.trim();
+                  final email = emailCtrl.text.trim();
+                  if (name.isEmpty || email.isEmpty) return;
+
+                  final userId =
+                      ref.read(currentUserProvider)?.id ?? '';
+                  final client = Client(
+                    id: const Uuid().v4(),
+                    userId: userId,
+                    name: name,
+                    email: email,
+                    createdAt: DateTime.now(),
+                  );
+
+                  await ref
+                      .read(clientListViewModelProvider.notifier)
+                      .createClient(client);
+
+                  if (ctx.mounted) Navigator.of(ctx).pop();
                 },
                 child: const Text('Add Client'),
               ),
@@ -232,13 +266,12 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
 
 class _ClientRow extends StatelessWidget {
   const _ClientRow({required this.client});
-  final DemoClient client;
+  final Client client;
 
   @override
   Widget build(BuildContext context) {
     final initial = client.name[0].toUpperCase();
-    final billedStr =
-        '\$${client.totalBilled.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}';
+    final color = _avatarColor(client.name);
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -249,12 +282,11 @@ class _ClientRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: client.avatarColor,
+              color: color,
               borderRadius: AppRadius.iconButtonBorder,
             ),
             child: Center(
@@ -269,7 +301,6 @@ class _ClientRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,7 +315,7 @@ class _ClientRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${client.invoiceCount} invoices · $billedStr billed',
+                  client.email,
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: AppColors.textSecondary,
