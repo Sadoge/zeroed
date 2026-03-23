@@ -1,96 +1,88 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:zeroed/features/clients/data/client_repository.dart';
+import 'package:zeroed/features/invoices/data/invoice_repository.dart';
 import 'package:zeroed/models/invoice_model.dart';
 import 'package:zeroed/models/invoice_status.dart';
 import 'package:zeroed/models/invoice_summary.dart';
-import 'package:zeroed/models/line_item_model.dart';
 
 part 'dashboard_view_model.g.dart';
 
 @riverpod
-InvoiceSummary dashboardSummary(Ref ref) {
-  // Hardcoded for Step 8 — will be wired to real data in Step 13.
-  return const InvoiceSummary(
-    totalOutstanding: 4250.00,
-    totalOverdue: 850.00,
-    paidThisMonth: 12400.00,
-    invoiceCount: 3,
-    overdueCount: 1,
+Future<List<Invoice>> allInvoices(Ref ref) async {
+  return ref.watch(invoiceRepositoryProvider).getInvoices();
+}
+
+@riverpod
+Future<List<Invoice>> recentInvoices(Ref ref) async {
+  final all = await ref.watch(allInvoicesProvider.future);
+  // Return the 5 most recent invoices
+  final sorted = [...all]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  return sorted.take(5).toList();
+}
+
+@riverpod
+Future<InvoiceSummary> dashboardSummary(Ref ref) async {
+  final invoices = await ref.watch(allInvoicesProvider.future);
+
+  final now = DateTime.now();
+  final monthStart = DateTime(now.year, now.month, 1);
+
+  double totalOutstanding = 0;
+  double totalOverdue = 0;
+  double paidThisMonth = 0;
+  int invoiceCount = 0;
+  int overdueCount = 0;
+
+  for (final inv in invoices) {
+    if (inv.status == InvoiceStatus.sent ||
+        inv.status == InvoiceStatus.viewed ||
+        inv.status == InvoiceStatus.overdue) {
+      totalOutstanding += inv.total;
+      invoiceCount++;
+    }
+    if (inv.status == InvoiceStatus.overdue) {
+      totalOverdue += inv.total;
+      overdueCount++;
+    }
+    if (inv.status == InvoiceStatus.paid &&
+        inv.paidAt != null &&
+        inv.paidAt!.isAfter(monthStart)) {
+      paidThisMonth += inv.total;
+    }
+  }
+
+  return InvoiceSummary(
+    totalOutstanding: totalOutstanding,
+    totalOverdue: totalOverdue,
+    paidThisMonth: paidThisMonth,
+    invoiceCount: invoiceCount,
+    overdueCount: overdueCount,
   );
 }
 
 @riverpod
-List<Invoice> recentInvoices(Ref ref) {
-  final now = DateTime.now();
-  return [
-    Invoice(
-      id: '1',
-      userId: 'demo',
-      clientId: 'c1',
-      invoiceNumber: 'INV-024',
-      status: InvoiceStatus.sent,
-      lineItems: [
-        const LineItem(id: 'l1', description: 'Web Design', unitPrice: 2400),
-      ],
-      dueDate: now.add(const Duration(days: 10)),
-      createdAt: now.subtract(const Duration(days: 2)),
-      updatedAt: now.subtract(const Duration(days: 2)),
-    ),
-    Invoice(
-      id: '2',
-      userId: 'demo',
-      clientId: 'c2',
-      invoiceNumber: 'INV-023',
-      status: InvoiceStatus.overdue,
-      lineItems: [
-        const LineItem(id: 'l2', description: 'Logo Design', unitPrice: 850),
-      ],
-      dueDate: now.subtract(const Duration(days: 3)),
-      createdAt: now.subtract(const Duration(days: 14)),
-      updatedAt: now.subtract(const Duration(days: 14)),
-    ),
-    Invoice(
-      id: '3',
-      userId: 'demo',
-      clientId: 'c3',
-      invoiceNumber: 'INV-022',
-      status: InvoiceStatus.paid,
-      lineItems: [
-        const LineItem(
-            id: 'l3', description: 'App Development', unitPrice: 3200),
-      ],
-      dueDate: now.subtract(const Duration(days: 20)),
-      paidAt: now.subtract(const Duration(days: 11)),
-      createdAt: now.subtract(const Duration(days: 30)),
-      updatedAt: now.subtract(const Duration(days: 11)),
-    ),
-    Invoice(
-      id: '4',
-      userId: 'demo',
-      clientId: 'c4',
-      invoiceNumber: 'INV-021',
-      status: InvoiceStatus.viewed,
-      lineItems: [
-        const LineItem(
-            id: 'l4', description: 'Brand Consultation', unitPrice: 1000),
-      ],
-      dueDate: now.subtract(const Duration(days: 3)),
-      createdAt: now.subtract(const Duration(days: 10)),
-      updatedAt: now.subtract(const Duration(days: 5)),
-    ),
-  ];
+Future<Map<String, String>> clientNameMap(Ref ref) async {
+  final clients = await ref.watch(clientRepositoryProvider).getClients();
+  return {for (final c in clients) c.id: c.name};
 }
 
-// Hardcoded client names for display (will come from client repo later).
-const _clientNames = {
-  'c1': 'Acme Corp',
-  'c2': 'Bright Studio',
-  'c3': 'Nova Digital',
-  'c4': 'Quantum Labs',
-};
-
-String clientNameForId(String? clientId) {
+String resolveClientName(
+    Map<String, String> nameMap, String? clientId) {
   if (clientId == null) return 'Unknown';
-  return _clientNames[clientId] ?? 'Unknown';
+  return nameMap[clientId] ?? 'Unknown';
+}
+
+// Keep the old function signature for compatibility with detail/preview screens
+// that still use hardcoded data.
+String clientNameForId(String? clientId) {
+  const fallback = {
+    'c1': 'Acme Corp',
+    'c2': 'Bright Studio',
+    'c3': 'Nova Digital',
+    'c4': 'Quantum Labs',
+  };
+  if (clientId == null) return 'Unknown';
+  return fallback[clientId] ?? 'Unknown';
 }

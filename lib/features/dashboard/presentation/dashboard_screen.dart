@@ -14,6 +14,7 @@ import 'package:zeroed/models/invoice_model.dart';
 import 'package:zeroed/models/invoice_status.dart';
 import 'package:zeroed/models/invoice_summary.dart';
 import 'package:zeroed/shared/widgets/invoice_row.dart';
+import 'package:zeroed/shared/widgets/loading_shimmer.dart';
 import 'package:zeroed/shared/widgets/section_header.dart';
 import 'package:zeroed/shared/widgets/summary_card.dart';
 
@@ -25,28 +26,39 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summary = ref.watch(dashboardSummaryProvider);
-    final invoices = ref.watch(recentInvoicesProvider);
+    final summaryAsync = ref.watch(dashboardSummaryProvider);
+    final invoicesAsync = ref.watch(recentInvoicesProvider);
+    final clientNamesAsync = ref.watch(clientNameMapProvider);
 
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: AppSpacing.screenPadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppSpacing.lg),
-              _buildHeader(),
-              const SizedBox(height: AppSpacing.sectionGap),
-              _buildSummaryCards(summary),
-              const SizedBox(height: AppSpacing.sectionGap),
-              _buildRecentHeader(),
-              const SizedBox(height: AppSpacing.md),
-              _buildInvoiceList(context, invoices),
-              // Extra padding so content doesn't hide behind FAB/nav
-              const SizedBox(height: 120),
-            ],
+        child: RefreshIndicator(
+          color: AppColors.accent,
+          backgroundColor: AppColors.bgCard,
+          onRefresh: () async {
+            ref.invalidate(allInvoicesProvider);
+            ref.invalidate(clientNameMapProvider);
+            await ref.read(allInvoicesProvider.future);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: AppSpacing.screenPadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: AppSpacing.lg),
+                _buildHeader(),
+                const SizedBox(height: AppSpacing.sectionGap),
+                _buildSummarySection(summaryAsync),
+                const SizedBox(height: AppSpacing.sectionGap),
+                _buildRecentHeader(),
+                const SizedBox(height: AppSpacing.md),
+                _buildInvoiceSection(
+                    context, invoicesAsync, clientNamesAsync),
+                const SizedBox(height: 120),
+              ],
+            ),
           ),
         ),
       ),
@@ -98,6 +110,24 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
+  // ─── Summary Cards ──────────────────────────────────────────
+
+  Widget _buildSummarySection(AsyncValue<InvoiceSummary> async) {
+    return async.when(
+      loading: () => Column(
+        children: [
+          LoadingShimmer.summaryCard(),
+          const SizedBox(height: AppSpacing.listGap),
+          LoadingShimmer.summaryCard(),
+          const SizedBox(height: AppSpacing.listGap),
+          LoadingShimmer.summaryCard(),
+        ],
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (summary) => _buildSummaryCards(summary),
+    );
+  }
+
   Widget _buildSummaryCards(InvoiceSummary summary) {
     return Column(
       children: [
@@ -118,12 +148,14 @@ class DashboardScreen extends ConsumerWidget {
         SummaryCard(
           label: 'PAID THIS MONTH',
           amount: _currencyFormat.format(summary.paidThisMonth),
-          subtitle: '8 invoices',
+          subtitle: 'this month',
           amountColor: AppColors.statusPaid,
         ),
       ],
     );
   }
+
+  // ─── Recent Invoices ────────────────────────────────────────
 
   Widget _buildRecentHeader() {
     return SectionHeader(
@@ -139,23 +171,90 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInvoiceList(BuildContext context, List<Invoice> invoices) {
-    return Column(
-      children: invoices.map((invoice) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.tightListGap),
-          child: InvoiceRow(
-            clientName: clientNameForId(invoice.clientId),
-            invoiceNumber: invoice.invoiceNumber,
-            dateLabel: _formatDateLabel(invoice),
-            amount: _currencyFormat.format(invoice.total),
-            status: invoice.status,
-            onTap: () {
-              context.router.push(InvoiceDetailRoute(invoiceId: invoice.id));
-            },
+  Widget _buildInvoiceSection(
+    BuildContext context,
+    AsyncValue<List<Invoice>> invoicesAsync,
+    AsyncValue<Map<String, String>> clientNamesAsync,
+  ) {
+    return invoicesAsync.when(
+      loading: () => Column(
+        children: List.generate(
+          3,
+          (_) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.tightListGap),
+            child: LoadingShimmer.invoiceRow(),
           ),
+        ),
+      ),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+          child: Text(
+            'Failed to load invoices',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ),
+      ),
+      data: (invoices) {
+        if (invoices.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+              child: Column(
+                children: [
+                  Icon(
+                    LucideIcons.fileText,
+                    size: 40,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'No invoices yet',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Tap + to create your first invoice',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final nameMap = clientNamesAsync.valueOrNull ?? {};
+        return Column(
+          children: invoices.map((invoice) {
+            return Padding(
+              padding:
+                  const EdgeInsets.only(bottom: AppSpacing.tightListGap),
+              child: InvoiceRow(
+                clientName:
+                    resolveClientName(nameMap, invoice.clientId),
+                invoiceNumber: invoice.invoiceNumber,
+                dateLabel: _formatDateLabel(invoice),
+                amount: _currencyFormat.format(invoice.total),
+                status: invoice.status,
+                onTap: () {
+                  context.router
+                      .push(InvoiceDetailRoute(invoiceId: invoice.id));
+                },
+              ),
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 

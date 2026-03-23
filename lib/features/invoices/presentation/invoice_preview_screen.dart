@@ -30,15 +30,25 @@ class InvoicePreviewScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // For now use hardcoded data — will be wired to real repo later.
-    final invoices = ref.watch(recentInvoicesProvider);
-    final invoice = invoices.firstWhere(
-      (i) => i.id == invoiceId,
-      orElse: () => _demoInvoice(),
-    );
-    final clientName = clientNameForId(invoice.clientId);
+    final invoicesAsync = ref.watch(recentInvoicesProvider);
 
-    return Scaffold(
+    return invoicesAsync.when(
+      loading: () => const Scaffold(
+        backgroundColor: AppColors.bgPrimary,
+        body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
+      ),
+      error: (_, __) => const Scaffold(
+        backgroundColor: AppColors.bgPrimary,
+        body: Center(child: Text('Error loading invoice')),
+      ),
+      data: (invoices) {
+        final invoice = invoices.firstWhere(
+          (i) => i.id == invoiceId,
+          orElse: () => _demoInvoice(),
+        );
+        final clientName = clientNameForId(invoice.clientId);
+
+        return Scaffold(
       backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: Column(
@@ -93,6 +103,8 @@ class InvoicePreviewScreen extends ConsumerWidget {
           ],
         ),
       ),
+        );
+      },
     );
   }
 

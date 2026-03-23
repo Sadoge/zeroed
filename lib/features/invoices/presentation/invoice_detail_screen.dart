@@ -34,13 +34,34 @@ class InvoiceDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final invoices = ref.watch(recentInvoicesProvider);
-    final invoice = invoices.firstWhere(
-      (i) => i.id == invoiceId,
-      orElse: () => _fallbackInvoice(),
-    );
-    final cName = clientNameForId(invoice.clientId);
+    final invoicesAsync = ref.watch(recentInvoicesProvider);
 
+    return invoicesAsync.when(
+      loading: () => const Scaffold(
+        backgroundColor: AppColors.bgPrimary,
+        body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
+      ),
+      error: (_, __) => Scaffold(
+        backgroundColor: AppColors.bgPrimary,
+        body: Center(
+          child: Text('Error loading invoice',
+              style: AppTextStyles.body.copyWith(color: AppColors.textMuted)),
+        ),
+      ),
+      data: (invoices) {
+        final invoice = invoices.firstWhere(
+          (i) => i.id == invoiceId,
+          orElse: () => _fallbackInvoice(),
+        );
+        final cName = clientNameForId(invoice.clientId);
+
+        return _buildContent(context, ref, invoice, cName);
+      },
+    );
+  }
+
+  Widget _buildContent(
+      BuildContext context, WidgetRef ref, Invoice invoice, String cName) {
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
