@@ -185,6 +185,30 @@ class PdfService {
                 ),
               ),
 
+              if (paymentLink != null) ...[
+                pw.SizedBox(height: 32),
+                pw.UrlLink(
+                  destination: paymentLink,
+                  child: pw.Container(
+                    width: double.infinity,
+                    height: 44,
+                    alignment: pw.Alignment.center,
+                    decoration: pw.BoxDecoration(
+                      color: PdfColor.fromHex('#22D3EE'),
+                      borderRadius: pw.BorderRadius.circular(8),
+                    ),
+                    child: pw.Text(
+                      'Pay Now — ${formatCurrency(invoice.total, invoice.currency)}',
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                        color: darkColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+
               pw.Spacer(),
 
               // Footer
