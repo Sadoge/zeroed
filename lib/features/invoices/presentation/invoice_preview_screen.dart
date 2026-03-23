@@ -20,7 +20,7 @@ import 'package:zeroed/models/line_item_model.dart';
 import 'package:zeroed/shared/widgets/app_back_button.dart';
 import 'package:zeroed/shared/widgets/app_button.dart';
 
-final _currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+import 'package:zeroed/core/utils/currency_utils.dart';
 final _dateFormat = DateFormat('MMM d, y');
 
 @RoutePage()
@@ -392,7 +392,7 @@ class _InvoiceDocument extends StatelessWidget {
           SizedBox(
             width: 60,
             child: Text(
-              _currencyFormat.format(item.unitPrice),
+              currencyFormat(invoice.currency).format(item.unitPrice),
               textAlign: TextAlign.right,
               style: GoogleFonts.jetBrainsMono(fontSize: 12, color: _muted),
             ),
@@ -400,7 +400,7 @@ class _InvoiceDocument extends StatelessWidget {
           SizedBox(
             width: 72,
             child: Text(
-              _currencyFormat.format(item.amount),
+              currencyFormat(invoice.currency).format(item.amount),
               textAlign: TextAlign.right,
               style: GoogleFonts.jetBrainsMono(
                   fontSize: 12, fontWeight: FontWeight.w500, color: _body),
@@ -418,11 +418,13 @@ class _InvoiceDocument extends StatelessWidget {
         width: 180,
         child: Column(
           children: [
-            _buildTotalRow('Subtotal', _currencyFormat.format(invoice.subtotal)),
-            const SizedBox(height: 6),
-            _buildTotalRow(
-                'Tax (${invoice.taxRate?.toStringAsFixed(0) ?? '0'}%)',
-                _currencyFormat.format(invoice.taxAmount)),
+            _buildTotalRow('Subtotal', currencyFormat(invoice.currency).format(invoice.subtotal)),
+            if (invoice.taxRate != null && invoice.taxRate! > 0) ...[
+              const SizedBox(height: 6),
+              _buildTotalRow(
+                  'Tax (${invoice.taxRate!.toStringAsFixed(0)}%)',
+                  currencyFormat(invoice.currency).format(invoice.taxAmount)),
+            ],
             const SizedBox(height: 8),
             const Divider(color: _border, height: 1),
             const SizedBox(height: 8),
@@ -438,7 +440,7 @@ class _InvoiceDocument extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  _currencyFormat.format(invoice.total),
+                  currencyFormat(invoice.currency).format(invoice.total),
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -476,7 +478,7 @@ class _InvoiceDocument extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          'Pay Now — ${_currencyFormat.format(invoice.total)}',
+          'Pay Now — ${currencyFormat(invoice.currency).format(invoice.total)}',
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,

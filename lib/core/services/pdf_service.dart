@@ -7,7 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:zeroed/models/invoice_model.dart';
 import 'package:zeroed/models/line_item_model.dart';
 
-final _currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+import 'package:zeroed/core/utils/currency_utils.dart';
 final _dateFormat = DateFormat('MMM d, y');
 
 class PdfService {
@@ -130,7 +130,7 @@ class PdfService {
 
               // Line items
               ...invoice.lineItems.map(
-                (item) => _buildLineRow(item, bodyColor, mutedColor),
+                (item) => _buildLineRow(item, bodyColor, mutedColor, invoice.currency),
               ),
 
               pw.SizedBox(height: 12),
@@ -145,13 +145,15 @@ class PdfService {
                   child: pw.Column(
                     children: [
                       _buildTotalRow('Subtotal',
-                          _currencyFormat.format(invoice.subtotal),
+                          currencyFormat(invoice.currency).format(invoice.subtotal),
                           mutedColor, bodyColor),
-                      pw.SizedBox(height: 6),
-                      _buildTotalRow(
-                          'Tax (${invoice.taxRate?.toStringAsFixed(0) ?? '0'}%)',
-                          _currencyFormat.format(invoice.taxAmount),
-                          mutedColor, bodyColor),
+                      if (invoice.taxRate != null && invoice.taxRate! > 0) ...[
+                        pw.SizedBox(height: 6),
+                        _buildTotalRow(
+                            'Tax (${invoice.taxRate!.toStringAsFixed(0)}%)',
+                            currencyFormat(invoice.currency).format(invoice.taxAmount),
+                            mutedColor, bodyColor),
+                      ],
                       pw.SizedBox(height: 8),
                       pw.Divider(color: borderColor, thickness: 1),
                       pw.SizedBox(height: 8),
@@ -168,7 +170,7 @@ class PdfService {
                             ),
                           ),
                           pw.Text(
-                            _currencyFormat.format(invoice.total),
+                            currencyFormat(invoice.currency).format(invoice.total),
                             style: pw.TextStyle(
                               fontSize: 18,
                               fontWeight: pw.FontWeight.bold,
@@ -197,7 +199,7 @@ class PdfService {
                       borderRadius: pw.BorderRadius.circular(8),
                     ),
                     child: pw.Text(
-                      'Pay Now — ${_currencyFormat.format(invoice.total)}',
+                      'Pay Now — ${currencyFormat(invoice.currency).format(invoice.total)}',
                       style: pw.TextStyle(
                         fontSize: 14,
                         fontWeight: pw.FontWeight.bold,
@@ -216,7 +218,7 @@ class PdfService {
                     borderRadius: pw.BorderRadius.circular(8),
                   ),
                   child: pw.Text(
-                    'Pay Now — ${_currencyFormat.format(invoice.total)}',
+                    'Pay Now — ${currencyFormat(invoice.currency).format(invoice.total)}',
                     style: pw.TextStyle(
                       fontSize: 14,
                       fontWeight: pw.FontWeight.bold,
@@ -294,7 +296,7 @@ class PdfService {
   }
 
   pw.Widget _buildLineRow(
-      LineItem item, PdfColor bodyColor, PdfColor mutedColor) {
+      LineItem item, PdfColor bodyColor, PdfColor mutedColor, String currency) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 4),
       child: pw.Row(
@@ -320,7 +322,7 @@ class PdfService {
           pw.SizedBox(
             width: 70,
             child: pw.Text(
-              _currencyFormat.format(item.unitPrice),
+              currencyFormat(currency).format(item.unitPrice),
               style: pw.TextStyle(fontSize: 12, color: mutedColor),
               textAlign: pw.TextAlign.right,
             ),
@@ -328,7 +330,7 @@ class PdfService {
           pw.SizedBox(
             width: 80,
             child: pw.Text(
-              _currencyFormat.format(item.amount),
+              currencyFormat(currency).format(item.amount),
               style: pw.TextStyle(
                   fontSize: 12,
                   fontWeight: pw.FontWeight.normal,

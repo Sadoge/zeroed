@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:zeroed/core/constants/app_constants.dart';
 import 'package:zeroed/features/invoices/data/invoice_repository.dart';
+import 'package:zeroed/features/settings/presentation/settings_view_model.dart';
 import 'package:zeroed/models/client_model.dart';
 import 'package:zeroed/models/invoice_model.dart';
 import 'package:zeroed/models/line_item_model.dart';
@@ -15,10 +16,16 @@ const _uuid = Uuid();
 class CreateInvoiceViewModel extends _$CreateInvoiceViewModel {
   @override
   CreateInvoiceState build() {
+    final profile = ref.watch(businessProfileProvider).valueOrNull;
+    final dueDays =
+        profile?.defaultPaymentTermsDays ?? AppConstants.defaultPaymentTermsDays;
+    final taxRate = profile?.defaultTaxRate ?? 10.0;
+    final currency = profile?.defaultCurrency ?? AppConstants.defaultCurrency;
+
     return CreateInvoiceState(
-      dueDate: DateTime.now().add(
-        const Duration(days: AppConstants.defaultPaymentTermsDays),
-      ),
+      dueDate: DateTime.now().add(Duration(days: dueDays)),
+      taxRate: taxRate,
+      currency: currency,
     );
   }
 
@@ -86,6 +93,7 @@ class CreateInvoiceViewModel extends _$CreateInvoiceViewModel {
       userId: '', // Will be filled by repository / Supabase RLS
       clientId: state.selectedClient?.id,
       invoiceNumber: 'INV-${now.millisecondsSinceEpoch.toString().substring(7)}',
+      currency: state.currency,
       lineItems: state.lineItems,
       taxRate: state.taxRate,
       dueDate: state.dueDate,
@@ -113,6 +121,7 @@ class CreateInvoiceState {
     this.lineItems = const [],
     this.taxRate = 10,
     required this.dueDate,
+    this.currency = 'USD',
     this.notes,
     this.isSaving = false,
   });
@@ -121,6 +130,7 @@ class CreateInvoiceState {
   final List<LineItem> lineItems;
   final double? taxRate;
   final DateTime dueDate;
+  final String currency;
   final String? notes;
   final bool isSaving;
 
@@ -129,6 +139,7 @@ class CreateInvoiceState {
     List<LineItem>? lineItems,
     double? taxRate,
     DateTime? dueDate,
+    String? currency,
     String? notes,
     bool? isSaving,
   }) {
@@ -137,6 +148,7 @@ class CreateInvoiceState {
       lineItems: lineItems ?? this.lineItems,
       taxRate: taxRate ?? this.taxRate,
       dueDate: dueDate ?? this.dueDate,
+      currency: currency ?? this.currency,
       notes: notes ?? this.notes,
       isSaving: isSaving ?? this.isSaving,
     );

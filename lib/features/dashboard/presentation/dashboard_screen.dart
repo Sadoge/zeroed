@@ -18,7 +18,8 @@ import 'package:zeroed/shared/widgets/loading_shimmer.dart';
 import 'package:zeroed/shared/widgets/section_header.dart';
 import 'package:zeroed/shared/widgets/summary_card.dart';
 
-final _currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+import 'package:zeroed/core/utils/currency_utils.dart';
+import 'package:zeroed/features/settings/presentation/settings_view_model.dart';
 
 @RoutePage()
 class DashboardScreen extends ConsumerWidget {
@@ -29,6 +30,8 @@ class DashboardScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(dashboardSummaryProvider);
     final invoicesAsync = ref.watch(recentInvoicesProvider);
     final clientNamesAsync = ref.watch(clientNameMapProvider);
+    final profile = ref.watch(businessProfileProvider).valueOrNull;
+    final fmt = currencyFormat(profile?.defaultCurrency ?? 'USD');
 
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
@@ -50,7 +53,7 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 _buildHeader(),
                 const SizedBox(height: AppSpacing.sectionGap),
-                _buildSummarySection(summaryAsync),
+                _buildSummarySection(summaryAsync, fmt),
                 const SizedBox(height: AppSpacing.sectionGap),
                 _buildRecentHeader(),
                 const SizedBox(height: AppSpacing.md),
@@ -112,7 +115,7 @@ class DashboardScreen extends ConsumerWidget {
 
   // ─── Summary Cards ──────────────────────────────────────────
 
-  Widget _buildSummarySection(AsyncValue<InvoiceSummary> async) {
+  Widget _buildSummarySection(AsyncValue<InvoiceSummary> async, NumberFormat fmt) {
     return async.when(
       loading: () => Column(
         children: [
@@ -124,22 +127,22 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       error: (_, __) => const SizedBox.shrink(),
-      data: (summary) => _buildSummaryCards(summary),
+      data: (summary) => _buildSummaryCards(summary, fmt),
     );
   }
 
-  Widget _buildSummaryCards(InvoiceSummary summary) {
+  Widget _buildSummaryCards(InvoiceSummary summary, NumberFormat fmt) {
     return Column(
       children: [
         SummaryCard(
           label: 'OUTSTANDING',
-          amount: _currencyFormat.format(summary.totalOutstanding),
+          amount: fmt.format(summary.totalOutstanding),
           subtitle: '${summary.invoiceCount} invoices',
         ),
         const SizedBox(height: AppSpacing.listGap),
         SummaryCard(
           label: 'OVERDUE',
-          amount: _currencyFormat.format(summary.totalOverdue),
+          amount: fmt.format(summary.totalOverdue),
           subtitle:
               '${summary.overdueCount} invoice${summary.overdueCount != 1 ? 's' : ''}',
           amountColor: AppColors.statusOverdue,
@@ -147,7 +150,7 @@ class DashboardScreen extends ConsumerWidget {
         const SizedBox(height: AppSpacing.listGap),
         SummaryCard(
           label: 'PAID THIS MONTH',
-          amount: _currencyFormat.format(summary.paidThisMonth),
+          amount: fmt.format(summary.paidThisMonth),
           subtitle: 'this month',
           amountColor: AppColors.statusPaid,
         ),
@@ -244,7 +247,7 @@ class DashboardScreen extends ConsumerWidget {
                     resolveClientName(nameMap, invoice.clientId),
                 invoiceNumber: invoice.invoiceNumber,
                 dateLabel: _formatDateLabel(invoice),
-                amount: _currencyFormat.format(invoice.total),
+                amount: currencyFormat(invoice.currency).format(invoice.total),
                 status: invoice.status,
                 onTap: () {
                   context.router

@@ -16,7 +16,7 @@ import 'package:zeroed/shared/widgets/app_back_button.dart';
 import 'package:zeroed/shared/widgets/app_button.dart';
 import 'package:zeroed/shared/widgets/section_header.dart';
 
-final _currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+import 'package:zeroed/core/utils/currency_utils.dart';
 
 @RoutePage()
 class CreateInvoiceScreen extends ConsumerStatefulWidget {
@@ -211,6 +211,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
                 child: _LineItemCard(
                   item: e.value,
                   onDelete: () => vm.removeLineItem(e.key),
+                  currency: state.currency,
                 ),
               ),
             ),
@@ -307,6 +308,10 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   // ─── Totals Card ────────────────────────────────────────────
 
   Widget _buildTotalsCard(CreateInvoiceViewModel vm) {
+    final state = ref.watch(createInvoiceViewModelProvider);
+    final fmt = currencyFormat(state.currency);
+    final hasTax = state.taxRate != null && state.taxRate! > 0;
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -317,13 +322,15 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
         children: [
           _TotalRow(
             label: 'Subtotal',
-            value: _currencyFormat.format(vm.subtotal),
+            value: fmt.format(vm.subtotal),
           ),
-          const SizedBox(height: AppSpacing.md),
-          _TotalRow(
-            label: 'Tax (10%)',
-            value: _currencyFormat.format(vm.taxAmount),
-          ),
+          if (hasTax) ...[
+            const SizedBox(height: AppSpacing.md),
+            _TotalRow(
+              label: 'Tax (${state.taxRate!.toStringAsFixed(0)}%)',
+              value: fmt.format(vm.taxAmount),
+            ),
+          ],
           const SizedBox(height: AppSpacing.md),
           const Divider(color: AppColors.border, height: 1),
           const SizedBox(height: AppSpacing.md),
@@ -332,7 +339,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
             children: [
               Text('Total', style: AppTextStyles.heading3),
               Text(
-                _currencyFormat.format(vm.total),
+                fmt.format(vm.total),
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
@@ -583,10 +590,15 @@ class _ClientPickerBodyState extends ConsumerState<_ClientPickerBody> {
 }
 
 class _LineItemCard extends StatelessWidget {
-  const _LineItemCard({required this.item, required this.onDelete});
+  const _LineItemCard({
+    required this.item,
+    required this.onDelete,
+    required this.currency,
+  });
 
   final LineItem item;
   final VoidCallback onDelete;
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
@@ -613,7 +625,7 @@ class _LineItemCard extends StatelessWidget {
                 ),
               ),
               Text(
-                _currencyFormat.format(item.amount),
+                currencyFormat(currency).format(item.amount),
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -630,7 +642,7 @@ class _LineItemCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.md),
               _InfoPill(
                 label: 'Rate:',
-                value: _currencyFormat.format(item.unitPrice),
+                value: currencyFormat(currency).format(item.unitPrice),
               ),
               const Spacer(),
               GestureDetector(

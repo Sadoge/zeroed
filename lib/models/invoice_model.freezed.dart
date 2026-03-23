@@ -22,22 +22,36 @@ Invoice _$InvoiceFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Invoice {
   String get id => throw _privateConstructorUsedError;
+  @JsonKey(name: 'user_id')
   String get userId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'client_id')
   String? get clientId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'invoice_number')
   String get invoiceNumber => throw _privateConstructorUsedError;
   InvoiceStatus get status => throw _privateConstructorUsedError;
   String get currency => throw _privateConstructorUsedError;
+  @JsonKey(name: 'line_items')
   List<LineItem> get lineItems => throw _privateConstructorUsedError;
+  @JsonKey(name: 'tax_rate')
   double? get taxRate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'due_date')
   DateTime get dueDate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'sent_at')
   DateTime? get sentAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'paid_at')
   DateTime? get paidAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'stripe_payment_link')
   String? get stripePaymentLink => throw _privateConstructorUsedError;
+  @JsonKey(name: 'pdf_url')
   String? get pdfUrl => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
+  @JsonKey(name: 'is_recurring')
   bool get isRecurring => throw _privateConstructorUsedError;
+  @JsonKey(name: 'recurrence_interval')
   String? get recurrenceInterval => throw _privateConstructorUsedError;
+  @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'updated_at')
   DateTime get updatedAt => throw _privateConstructorUsedError;
 
   /// Serializes this Invoice to a JSON map.
@@ -56,23 +70,23 @@ abstract class $InvoiceCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String userId,
-    String? clientId,
-    String invoiceNumber,
+    @JsonKey(name: 'user_id') String userId,
+    @JsonKey(name: 'client_id') String? clientId,
+    @JsonKey(name: 'invoice_number') String invoiceNumber,
     InvoiceStatus status,
     String currency,
-    List<LineItem> lineItems,
-    double? taxRate,
-    DateTime dueDate,
-    DateTime? sentAt,
-    DateTime? paidAt,
-    String? stripePaymentLink,
-    String? pdfUrl,
+    @JsonKey(name: 'line_items') List<LineItem> lineItems,
+    @JsonKey(name: 'tax_rate') double? taxRate,
+    @JsonKey(name: 'due_date') DateTime dueDate,
+    @JsonKey(name: 'sent_at') DateTime? sentAt,
+    @JsonKey(name: 'paid_at') DateTime? paidAt,
+    @JsonKey(name: 'stripe_payment_link') String? stripePaymentLink,
+    @JsonKey(name: 'pdf_url') String? pdfUrl,
     String? notes,
-    bool isRecurring,
-    String? recurrenceInterval,
-    DateTime createdAt,
-    DateTime updatedAt,
+    @JsonKey(name: 'is_recurring') bool isRecurring,
+    @JsonKey(name: 'recurrence_interval') String? recurrenceInterval,
+    @JsonKey(name: 'created_at') DateTime createdAt,
+    @JsonKey(name: 'updated_at') DateTime updatedAt,
   });
 }
 
@@ -200,23 +214,23 @@ abstract class _$$InvoiceImplCopyWith<$Res> implements $InvoiceCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String userId,
-    String? clientId,
-    String invoiceNumber,
+    @JsonKey(name: 'user_id') String userId,
+    @JsonKey(name: 'client_id') String? clientId,
+    @JsonKey(name: 'invoice_number') String invoiceNumber,
     InvoiceStatus status,
     String currency,
-    List<LineItem> lineItems,
-    double? taxRate,
-    DateTime dueDate,
-    DateTime? sentAt,
-    DateTime? paidAt,
-    String? stripePaymentLink,
-    String? pdfUrl,
+    @JsonKey(name: 'line_items') List<LineItem> lineItems,
+    @JsonKey(name: 'tax_rate') double? taxRate,
+    @JsonKey(name: 'due_date') DateTime dueDate,
+    @JsonKey(name: 'sent_at') DateTime? sentAt,
+    @JsonKey(name: 'paid_at') DateTime? paidAt,
+    @JsonKey(name: 'stripe_payment_link') String? stripePaymentLink,
+    @JsonKey(name: 'pdf_url') String? pdfUrl,
     String? notes,
-    bool isRecurring,
-    String? recurrenceInterval,
-    DateTime createdAt,
-    DateTime updatedAt,
+    @JsonKey(name: 'is_recurring') bool isRecurring,
+    @JsonKey(name: 'recurrence_interval') String? recurrenceInterval,
+    @JsonKey(name: 'created_at') DateTime createdAt,
+    @JsonKey(name: 'updated_at') DateTime updatedAt,
   });
 }
 
@@ -337,23 +351,23 @@ class __$$InvoiceImplCopyWithImpl<$Res>
 class _$InvoiceImpl extends _Invoice {
   const _$InvoiceImpl({
     required this.id,
-    required this.userId,
-    this.clientId,
-    required this.invoiceNumber,
+    @JsonKey(name: 'user_id') required this.userId,
+    @JsonKey(name: 'client_id') this.clientId,
+    @JsonKey(name: 'invoice_number') required this.invoiceNumber,
     this.status = InvoiceStatus.draft,
     this.currency = 'USD',
-    final List<LineItem> lineItems = const [],
-    this.taxRate,
-    required this.dueDate,
-    this.sentAt,
-    this.paidAt,
-    this.stripePaymentLink,
-    this.pdfUrl,
+    @JsonKey(name: 'line_items') final List<LineItem> lineItems = const [],
+    @JsonKey(name: 'tax_rate') this.taxRate,
+    @JsonKey(name: 'due_date') required this.dueDate,
+    @JsonKey(name: 'sent_at') this.sentAt,
+    @JsonKey(name: 'paid_at') this.paidAt,
+    @JsonKey(name: 'stripe_payment_link') this.stripePaymentLink,
+    @JsonKey(name: 'pdf_url') this.pdfUrl,
     this.notes,
-    this.isRecurring = false,
-    this.recurrenceInterval,
-    required this.createdAt,
-    required this.updatedAt,
+    @JsonKey(name: 'is_recurring') this.isRecurring = false,
+    @JsonKey(name: 'recurrence_interval') this.recurrenceInterval,
+    @JsonKey(name: 'created_at') required this.createdAt,
+    @JsonKey(name: 'updated_at') required this.updatedAt,
   }) : _lineItems = lineItems,
        super._();
 
@@ -363,10 +377,13 @@ class _$InvoiceImpl extends _Invoice {
   @override
   final String id;
   @override
+  @JsonKey(name: 'user_id')
   final String userId;
   @override
+  @JsonKey(name: 'client_id')
   final String? clientId;
   @override
+  @JsonKey(name: 'invoice_number')
   final String invoiceNumber;
   @override
   @JsonKey()
@@ -376,7 +393,7 @@ class _$InvoiceImpl extends _Invoice {
   final String currency;
   final List<LineItem> _lineItems;
   @override
-  @JsonKey()
+  @JsonKey(name: 'line_items')
   List<LineItem> get lineItems {
     if (_lineItems is EqualUnmodifiableListView) return _lineItems;
     // ignore: implicit_dynamic_type
@@ -384,27 +401,36 @@ class _$InvoiceImpl extends _Invoice {
   }
 
   @override
+  @JsonKey(name: 'tax_rate')
   final double? taxRate;
   @override
+  @JsonKey(name: 'due_date')
   final DateTime dueDate;
   @override
+  @JsonKey(name: 'sent_at')
   final DateTime? sentAt;
   @override
+  @JsonKey(name: 'paid_at')
   final DateTime? paidAt;
   @override
+  @JsonKey(name: 'stripe_payment_link')
   final String? stripePaymentLink;
   @override
+  @JsonKey(name: 'pdf_url')
   final String? pdfUrl;
   @override
   final String? notes;
   @override
-  @JsonKey()
+  @JsonKey(name: 'is_recurring')
   final bool isRecurring;
   @override
+  @JsonKey(name: 'recurrence_interval')
   final String? recurrenceInterval;
   @override
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
   @override
+  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   @override
@@ -489,23 +515,23 @@ class _$InvoiceImpl extends _Invoice {
 abstract class _Invoice extends Invoice {
   const factory _Invoice({
     required final String id,
-    required final String userId,
-    final String? clientId,
-    required final String invoiceNumber,
+    @JsonKey(name: 'user_id') required final String userId,
+    @JsonKey(name: 'client_id') final String? clientId,
+    @JsonKey(name: 'invoice_number') required final String invoiceNumber,
     final InvoiceStatus status,
     final String currency,
-    final List<LineItem> lineItems,
-    final double? taxRate,
-    required final DateTime dueDate,
-    final DateTime? sentAt,
-    final DateTime? paidAt,
-    final String? stripePaymentLink,
-    final String? pdfUrl,
+    @JsonKey(name: 'line_items') final List<LineItem> lineItems,
+    @JsonKey(name: 'tax_rate') final double? taxRate,
+    @JsonKey(name: 'due_date') required final DateTime dueDate,
+    @JsonKey(name: 'sent_at') final DateTime? sentAt,
+    @JsonKey(name: 'paid_at') final DateTime? paidAt,
+    @JsonKey(name: 'stripe_payment_link') final String? stripePaymentLink,
+    @JsonKey(name: 'pdf_url') final String? pdfUrl,
     final String? notes,
-    final bool isRecurring,
-    final String? recurrenceInterval,
-    required final DateTime createdAt,
-    required final DateTime updatedAt,
+    @JsonKey(name: 'is_recurring') final bool isRecurring,
+    @JsonKey(name: 'recurrence_interval') final String? recurrenceInterval,
+    @JsonKey(name: 'created_at') required final DateTime createdAt,
+    @JsonKey(name: 'updated_at') required final DateTime updatedAt,
   }) = _$InvoiceImpl;
   const _Invoice._() : super._();
 
@@ -514,38 +540,52 @@ abstract class _Invoice extends Invoice {
   @override
   String get id;
   @override
+  @JsonKey(name: 'user_id')
   String get userId;
   @override
+  @JsonKey(name: 'client_id')
   String? get clientId;
   @override
+  @JsonKey(name: 'invoice_number')
   String get invoiceNumber;
   @override
   InvoiceStatus get status;
   @override
   String get currency;
   @override
+  @JsonKey(name: 'line_items')
   List<LineItem> get lineItems;
   @override
+  @JsonKey(name: 'tax_rate')
   double? get taxRate;
   @override
+  @JsonKey(name: 'due_date')
   DateTime get dueDate;
   @override
+  @JsonKey(name: 'sent_at')
   DateTime? get sentAt;
   @override
+  @JsonKey(name: 'paid_at')
   DateTime? get paidAt;
   @override
+  @JsonKey(name: 'stripe_payment_link')
   String? get stripePaymentLink;
   @override
+  @JsonKey(name: 'pdf_url')
   String? get pdfUrl;
   @override
   String? get notes;
   @override
+  @JsonKey(name: 'is_recurring')
   bool get isRecurring;
   @override
+  @JsonKey(name: 'recurrence_interval')
   String? get recurrenceInterval;
   @override
+  @JsonKey(name: 'created_at')
   DateTime get createdAt;
   @override
+  @JsonKey(name: 'updated_at')
   DateTime get updatedAt;
 
   /// Create a copy of Invoice

@@ -7,13 +7,13 @@ part 'client_model.g.dart';
 class Client with _$Client {
   const factory Client({
     required String id,
-    required String userId,
+    @JsonKey(name: 'user_id') required String userId,
     required String name,
     required String email,
     String? phone,
     String? company,
     String? notes,
-    required DateTime createdAt,
+    @JsonKey(name: 'created_at') required DateTime createdAt,
   }) = _Client;
 
   factory Client.fromJson(Map<String, dynamic> json) =>

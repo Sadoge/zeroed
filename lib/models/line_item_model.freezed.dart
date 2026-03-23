@@ -24,7 +24,9 @@ mixin _$LineItem {
   String get id => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
   double get quantity => throw _privateConstructorUsedError;
+  @JsonKey(name: 'unit_price')
   double get unitPrice => throw _privateConstructorUsedError;
+  @JsonKey(name: 'sort_order')
   int get sortOrder => throw _privateConstructorUsedError;
 
   /// Serializes this LineItem to a JSON map.
@@ -46,8 +48,8 @@ abstract class $LineItemCopyWith<$Res> {
     String id,
     String description,
     double quantity,
-    double unitPrice,
-    int sortOrder,
+    @JsonKey(name: 'unit_price') double unitPrice,
+    @JsonKey(name: 'sort_order') int sortOrder,
   });
 }
 
@@ -113,8 +115,8 @@ abstract class _$$LineItemImplCopyWith<$Res>
     String id,
     String description,
     double quantity,
-    double unitPrice,
-    int sortOrder,
+    @JsonKey(name: 'unit_price') double unitPrice,
+    @JsonKey(name: 'sort_order') int sortOrder,
   });
 }
 
@@ -172,8 +174,8 @@ class _$LineItemImpl extends _LineItem {
     required this.id,
     required this.description,
     this.quantity = 1,
-    required this.unitPrice,
-    this.sortOrder = 0,
+    @JsonKey(name: 'unit_price') required this.unitPrice,
+    @JsonKey(name: 'sort_order') this.sortOrder = 0,
   }) : super._();
 
   factory _$LineItemImpl.fromJson(Map<String, dynamic> json) =>
@@ -187,9 +189,10 @@ class _$LineItemImpl extends _LineItem {
   @JsonKey()
   final double quantity;
   @override
+  @JsonKey(name: 'unit_price')
   final double unitPrice;
   @override
-  @JsonKey()
+  @JsonKey(name: 'sort_order')
   final int sortOrder;
 
   @override
@@ -237,8 +240,8 @@ abstract class _LineItem extends LineItem {
     required final String id,
     required final String description,
     final double quantity,
-    required final double unitPrice,
-    final int sortOrder,
+    @JsonKey(name: 'unit_price') required final double unitPrice,
+    @JsonKey(name: 'sort_order') final int sortOrder,
   }) = _$LineItemImpl;
   const _LineItem._() : super._();
 
@@ -252,8 +255,10 @@ abstract class _LineItem extends LineItem {
   @override
   double get quantity;
   @override
+  @JsonKey(name: 'unit_price')
   double get unitPrice;
   @override
+  @JsonKey(name: 'sort_order')
   int get sortOrder;
 
   /// Create a copy of LineItem

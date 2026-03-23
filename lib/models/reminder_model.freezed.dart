@@ -22,8 +22,11 @@ Reminder _$ReminderFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Reminder {
   String get id => throw _privateConstructorUsedError;
+  @JsonKey(name: 'invoice_id')
   String get invoiceId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'scheduled_at')
   DateTime get scheduledAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'sent_at')
   DateTime? get sentAt => throw _privateConstructorUsedError;
   String get type => throw _privateConstructorUsedError;
 
@@ -44,9 +47,9 @@ abstract class $ReminderCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String invoiceId,
-    DateTime scheduledAt,
-    DateTime? sentAt,
+    @JsonKey(name: 'invoice_id') String invoiceId,
+    @JsonKey(name: 'scheduled_at') DateTime scheduledAt,
+    @JsonKey(name: 'sent_at') DateTime? sentAt,
     String type,
   });
 }
@@ -111,9 +114,9 @@ abstract class _$$ReminderImplCopyWith<$Res>
   @useResult
   $Res call({
     String id,
-    String invoiceId,
-    DateTime scheduledAt,
-    DateTime? sentAt,
+    @JsonKey(name: 'invoice_id') String invoiceId,
+    @JsonKey(name: 'scheduled_at') DateTime scheduledAt,
+    @JsonKey(name: 'sent_at') DateTime? sentAt,
     String type,
   });
 }
@@ -170,9 +173,9 @@ class __$$ReminderImplCopyWithImpl<$Res>
 class _$ReminderImpl implements _Reminder {
   const _$ReminderImpl({
     required this.id,
-    required this.invoiceId,
-    required this.scheduledAt,
-    this.sentAt,
+    @JsonKey(name: 'invoice_id') required this.invoiceId,
+    @JsonKey(name: 'scheduled_at') required this.scheduledAt,
+    @JsonKey(name: 'sent_at') this.sentAt,
     required this.type,
   });
 
@@ -182,10 +185,13 @@ class _$ReminderImpl implements _Reminder {
   @override
   final String id;
   @override
+  @JsonKey(name: 'invoice_id')
   final String invoiceId;
   @override
+  @JsonKey(name: 'scheduled_at')
   final DateTime scheduledAt;
   @override
+  @JsonKey(name: 'sent_at')
   final DateTime? sentAt;
   @override
   final String type;
@@ -231,9 +237,9 @@ class _$ReminderImpl implements _Reminder {
 abstract class _Reminder implements Reminder {
   const factory _Reminder({
     required final String id,
-    required final String invoiceId,
-    required final DateTime scheduledAt,
-    final DateTime? sentAt,
+    @JsonKey(name: 'invoice_id') required final String invoiceId,
+    @JsonKey(name: 'scheduled_at') required final DateTime scheduledAt,
+    @JsonKey(name: 'sent_at') final DateTime? sentAt,
     required final String type,
   }) = _$ReminderImpl;
 
@@ -243,10 +249,13 @@ abstract class _Reminder implements Reminder {
   @override
   String get id;
   @override
+  @JsonKey(name: 'invoice_id')
   String get invoiceId;
   @override
+  @JsonKey(name: 'scheduled_at')
   DateTime get scheduledAt;
   @override
+  @JsonKey(name: 'sent_at')
   DateTime? get sentAt;
   @override
   String get type;

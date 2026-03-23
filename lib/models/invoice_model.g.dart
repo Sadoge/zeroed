@@ -9,55 +9,55 @@ part of 'invoice_model.dart';
 _$InvoiceImpl _$$InvoiceImplFromJson(Map<String, dynamic> json) =>
     _$InvoiceImpl(
       id: json['id'] as String,
-      userId: json['userId'] as String,
-      clientId: json['clientId'] as String?,
-      invoiceNumber: json['invoiceNumber'] as String,
+      userId: json['user_id'] as String,
+      clientId: json['client_id'] as String?,
+      invoiceNumber: json['invoice_number'] as String,
       status:
           $enumDecodeNullable(_$InvoiceStatusEnumMap, json['status']) ??
           InvoiceStatus.draft,
       currency: json['currency'] as String? ?? 'USD',
       lineItems:
-          (json['lineItems'] as List<dynamic>?)
+          (json['line_items'] as List<dynamic>?)
               ?.map((e) => LineItem.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
-      taxRate: (json['taxRate'] as num?)?.toDouble(),
-      dueDate: DateTime.parse(json['dueDate'] as String),
-      sentAt: json['sentAt'] == null
+      taxRate: (json['tax_rate'] as num?)?.toDouble(),
+      dueDate: DateTime.parse(json['due_date'] as String),
+      sentAt: json['sent_at'] == null
           ? null
-          : DateTime.parse(json['sentAt'] as String),
-      paidAt: json['paidAt'] == null
+          : DateTime.parse(json['sent_at'] as String),
+      paidAt: json['paid_at'] == null
           ? null
-          : DateTime.parse(json['paidAt'] as String),
-      stripePaymentLink: json['stripePaymentLink'] as String?,
-      pdfUrl: json['pdfUrl'] as String?,
+          : DateTime.parse(json['paid_at'] as String),
+      stripePaymentLink: json['stripe_payment_link'] as String?,
+      pdfUrl: json['pdf_url'] as String?,
       notes: json['notes'] as String?,
-      isRecurring: json['isRecurring'] as bool? ?? false,
-      recurrenceInterval: json['recurrenceInterval'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      isRecurring: json['is_recurring'] as bool? ?? false,
+      recurrenceInterval: json['recurrence_interval'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
 
 Map<String, dynamic> _$$InvoiceImplToJson(_$InvoiceImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'userId': instance.userId,
-      'clientId': instance.clientId,
-      'invoiceNumber': instance.invoiceNumber,
+      'user_id': instance.userId,
+      'client_id': instance.clientId,
+      'invoice_number': instance.invoiceNumber,
       'status': _$InvoiceStatusEnumMap[instance.status]!,
       'currency': instance.currency,
-      'lineItems': instance.lineItems,
-      'taxRate': instance.taxRate,
-      'dueDate': instance.dueDate.toIso8601String(),
-      'sentAt': instance.sentAt?.toIso8601String(),
-      'paidAt': instance.paidAt?.toIso8601String(),
-      'stripePaymentLink': instance.stripePaymentLink,
-      'pdfUrl': instance.pdfUrl,
+      'line_items': instance.lineItems,
+      'tax_rate': instance.taxRate,
+      'due_date': instance.dueDate.toIso8601String(),
+      'sent_at': instance.sentAt?.toIso8601String(),
+      'paid_at': instance.paidAt?.toIso8601String(),
+      'stripe_payment_link': instance.stripePaymentLink,
+      'pdf_url': instance.pdfUrl,
       'notes': instance.notes,
-      'isRecurring': instance.isRecurring,
-      'recurrenceInterval': instance.recurrenceInterval,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'is_recurring': instance.isRecurring,
+      'recurrence_interval': instance.recurrenceInterval,
+      'created_at': instance.createdAt.toIso8601String(),
+      'updated_at': instance.updatedAt.toIso8601String(),
     };
 
 const _$InvoiceStatusEnumMap = {

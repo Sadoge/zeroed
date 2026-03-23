@@ -9,19 +9,19 @@ part of 'reminder_model.dart';
 _$ReminderImpl _$$ReminderImplFromJson(Map<String, dynamic> json) =>
     _$ReminderImpl(
       id: json['id'] as String,
-      invoiceId: json['invoiceId'] as String,
-      scheduledAt: DateTime.parse(json['scheduledAt'] as String),
-      sentAt: json['sentAt'] == null
+      invoiceId: json['invoice_id'] as String,
+      scheduledAt: DateTime.parse(json['scheduled_at'] as String),
+      sentAt: json['sent_at'] == null
           ? null
-          : DateTime.parse(json['sentAt'] as String),
+          : DateTime.parse(json['sent_at'] as String),
       type: json['type'] as String,
     );
 
 Map<String, dynamic> _$$ReminderImplToJson(_$ReminderImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'invoiceId': instance.invoiceId,
-      'scheduledAt': instance.scheduledAt.toIso8601String(),
-      'sentAt': instance.sentAt?.toIso8601String(),
+      'invoice_id': instance.invoiceId,
+      'scheduled_at': instance.scheduledAt.toIso8601String(),
+      'sent_at': instance.sentAt?.toIso8601String(),
       'type': instance.type,
     };

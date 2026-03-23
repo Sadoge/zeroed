@@ -18,7 +18,7 @@ import 'package:zeroed/shared/widgets/app_back_button.dart';
 import 'package:zeroed/shared/widgets/app_button.dart';
 import 'package:zeroed/shared/widgets/section_header.dart';
 
-final _currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+import 'package:zeroed/core/utils/currency_utils.dart';
 final _dateFormat = DateFormat('MMM d');
 
 @RoutePage()
@@ -326,13 +326,13 @@ class _SummaryCard extends StatelessWidget {
         children: [
           _row('Total Invoices', summary.totalInvoices.toString()),
           const SizedBox(height: AppSpacing.lg),
-          _row('Total Billed', _currencyFormat.format(summary.totalBilled)),
+          _row('Total Billed', currencyFormat().format(summary.totalBilled)),
           const SizedBox(height: AppSpacing.lg),
           _row('Total Collected',
-              _currencyFormat.format(summary.totalCollected),
+              currencyFormat().format(summary.totalCollected),
               valueColor: AppColors.statusPaid),
           const SizedBox(height: AppSpacing.lg),
-          _row('Outstanding', _currencyFormat.format(summary.outstanding),
+          _row('Outstanding', currencyFormat().format(summary.outstanding),
               valueColor: AppColors.statusOverdue),
           const SizedBox(height: AppSpacing.lg),
           Container(height: 1, color: AppColors.bgInset),
@@ -349,7 +349,7 @@ class _SummaryCard extends StatelessWidget {
                 ),
               ),
               Text(
-                _currencyFormat.format(summary.taxCollected),
+                currencyFormat().format(summary.taxCollected),
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,

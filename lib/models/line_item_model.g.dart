@@ -11,8 +11,8 @@ _$LineItemImpl _$$LineItemImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       description: json['description'] as String,
       quantity: (json['quantity'] as num?)?.toDouble() ?? 1,
-      unitPrice: (json['unitPrice'] as num).toDouble(),
-      sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
+      unitPrice: (json['unit_price'] as num).toDouble(),
+      sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$$LineItemImplToJson(_$LineItemImpl instance) =>
@@ -20,6 +20,6 @@ Map<String, dynamic> _$$LineItemImplToJson(_$LineItemImpl instance) =>
       'id': instance.id,
       'description': instance.description,
       'quantity': instance.quantity,
-      'unitPrice': instance.unitPrice,
-      'sortOrder': instance.sortOrder,
+      'unit_price': instance.unitPrice,
+      'sort_order': instance.sortOrder,
     };

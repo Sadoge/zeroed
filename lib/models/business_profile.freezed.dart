@@ -23,14 +23,26 @@ BusinessProfile _$BusinessProfileFromJson(Map<String, dynamic> json) {
 mixin _$BusinessProfile {
   String get id => throw _privateConstructorUsedError;
   String get email => throw _privateConstructorUsedError;
+  @JsonKey(name: 'business_name')
   String? get businessName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'logo_url')
   String? get logoUrl => throw _privateConstructorUsedError;
   String? get address => throw _privateConstructorUsedError;
+  @JsonKey(name: 'tax_id')
   String? get taxId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'default_currency')
   String get defaultCurrency => throw _privateConstructorUsedError;
+  @JsonKey(name: 'default_payment_terms_days')
   int get defaultPaymentTermsDays => throw _privateConstructorUsedError;
+  @JsonKey(name: 'default_tax_rate')
+  double get defaultTaxRate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'reminders_enabled')
+  bool get remindersEnabled => throw _privateConstructorUsedError;
+  @JsonKey(name: 'stripe_account_id')
   String? get stripeAccountId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'stripe_connected')
   bool get stripeConnected => throw _privateConstructorUsedError;
+  @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this BusinessProfile to a JSON map.
@@ -53,15 +65,17 @@ abstract class $BusinessProfileCopyWith<$Res> {
   $Res call({
     String id,
     String email,
-    String? businessName,
-    String? logoUrl,
+    @JsonKey(name: 'business_name') String? businessName,
+    @JsonKey(name: 'logo_url') String? logoUrl,
     String? address,
-    String? taxId,
-    String defaultCurrency,
-    int defaultPaymentTermsDays,
-    String? stripeAccountId,
-    bool stripeConnected,
-    DateTime createdAt,
+    @JsonKey(name: 'tax_id') String? taxId,
+    @JsonKey(name: 'default_currency') String defaultCurrency,
+    @JsonKey(name: 'default_payment_terms_days') int defaultPaymentTermsDays,
+    @JsonKey(name: 'default_tax_rate') double defaultTaxRate,
+    @JsonKey(name: 'reminders_enabled') bool remindersEnabled,
+    @JsonKey(name: 'stripe_account_id') String? stripeAccountId,
+    @JsonKey(name: 'stripe_connected') bool stripeConnected,
+    @JsonKey(name: 'created_at') DateTime createdAt,
   });
 }
 
@@ -88,6 +102,8 @@ class _$BusinessProfileCopyWithImpl<$Res, $Val extends BusinessProfile>
     Object? taxId = freezed,
     Object? defaultCurrency = null,
     Object? defaultPaymentTermsDays = null,
+    Object? defaultTaxRate = null,
+    Object? remindersEnabled = null,
     Object? stripeAccountId = freezed,
     Object? stripeConnected = null,
     Object? createdAt = null,
@@ -126,6 +142,14 @@ class _$BusinessProfileCopyWithImpl<$Res, $Val extends BusinessProfile>
                 ? _value.defaultPaymentTermsDays
                 : defaultPaymentTermsDays // ignore: cast_nullable_to_non_nullable
                       as int,
+            defaultTaxRate: null == defaultTaxRate
+                ? _value.defaultTaxRate
+                : defaultTaxRate // ignore: cast_nullable_to_non_nullable
+                      as double,
+            remindersEnabled: null == remindersEnabled
+                ? _value.remindersEnabled
+                : remindersEnabled // ignore: cast_nullable_to_non_nullable
+                      as bool,
             stripeAccountId: freezed == stripeAccountId
                 ? _value.stripeAccountId
                 : stripeAccountId // ignore: cast_nullable_to_non_nullable
@@ -156,15 +180,17 @@ abstract class _$$BusinessProfileImplCopyWith<$Res>
   $Res call({
     String id,
     String email,
-    String? businessName,
-    String? logoUrl,
+    @JsonKey(name: 'business_name') String? businessName,
+    @JsonKey(name: 'logo_url') String? logoUrl,
     String? address,
-    String? taxId,
-    String defaultCurrency,
-    int defaultPaymentTermsDays,
-    String? stripeAccountId,
-    bool stripeConnected,
-    DateTime createdAt,
+    @JsonKey(name: 'tax_id') String? taxId,
+    @JsonKey(name: 'default_currency') String defaultCurrency,
+    @JsonKey(name: 'default_payment_terms_days') int defaultPaymentTermsDays,
+    @JsonKey(name: 'default_tax_rate') double defaultTaxRate,
+    @JsonKey(name: 'reminders_enabled') bool remindersEnabled,
+    @JsonKey(name: 'stripe_account_id') String? stripeAccountId,
+    @JsonKey(name: 'stripe_connected') bool stripeConnected,
+    @JsonKey(name: 'created_at') DateTime createdAt,
   });
 }
 
@@ -190,6 +216,8 @@ class __$$BusinessProfileImplCopyWithImpl<$Res>
     Object? taxId = freezed,
     Object? defaultCurrency = null,
     Object? defaultPaymentTermsDays = null,
+    Object? defaultTaxRate = null,
+    Object? remindersEnabled = null,
     Object? stripeAccountId = freezed,
     Object? stripeConnected = null,
     Object? createdAt = null,
@@ -228,6 +256,14 @@ class __$$BusinessProfileImplCopyWithImpl<$Res>
             ? _value.defaultPaymentTermsDays
             : defaultPaymentTermsDays // ignore: cast_nullable_to_non_nullable
                   as int,
+        defaultTaxRate: null == defaultTaxRate
+            ? _value.defaultTaxRate
+            : defaultTaxRate // ignore: cast_nullable_to_non_nullable
+                  as double,
+        remindersEnabled: null == remindersEnabled
+            ? _value.remindersEnabled
+            : remindersEnabled // ignore: cast_nullable_to_non_nullable
+                  as bool,
         stripeAccountId: freezed == stripeAccountId
             ? _value.stripeAccountId
             : stripeAccountId // ignore: cast_nullable_to_non_nullable
@@ -251,15 +287,18 @@ class _$BusinessProfileImpl implements _BusinessProfile {
   const _$BusinessProfileImpl({
     required this.id,
     required this.email,
-    this.businessName,
-    this.logoUrl,
+    @JsonKey(name: 'business_name') this.businessName,
+    @JsonKey(name: 'logo_url') this.logoUrl,
     this.address,
-    this.taxId,
-    this.defaultCurrency = 'USD',
+    @JsonKey(name: 'tax_id') this.taxId,
+    @JsonKey(name: 'default_currency') this.defaultCurrency = 'USD',
+    @JsonKey(name: 'default_payment_terms_days')
     this.defaultPaymentTermsDays = 30,
-    this.stripeAccountId,
-    this.stripeConnected = false,
-    required this.createdAt,
+    @JsonKey(name: 'default_tax_rate') this.defaultTaxRate = 10.0,
+    @JsonKey(name: 'reminders_enabled') this.remindersEnabled = true,
+    @JsonKey(name: 'stripe_account_id') this.stripeAccountId,
+    @JsonKey(name: 'stripe_connected') this.stripeConnected = false,
+    @JsonKey(name: 'created_at') required this.createdAt,
   });
 
   factory _$BusinessProfileImpl.fromJson(Map<String, dynamic> json) =>
@@ -270,30 +309,41 @@ class _$BusinessProfileImpl implements _BusinessProfile {
   @override
   final String email;
   @override
+  @JsonKey(name: 'business_name')
   final String? businessName;
   @override
+  @JsonKey(name: 'logo_url')
   final String? logoUrl;
   @override
   final String? address;
   @override
+  @JsonKey(name: 'tax_id')
   final String? taxId;
   @override
-  @JsonKey()
+  @JsonKey(name: 'default_currency')
   final String defaultCurrency;
   @override
-  @JsonKey()
+  @JsonKey(name: 'default_payment_terms_days')
   final int defaultPaymentTermsDays;
   @override
+  @JsonKey(name: 'default_tax_rate')
+  final double defaultTaxRate;
+  @override
+  @JsonKey(name: 'reminders_enabled')
+  final bool remindersEnabled;
+  @override
+  @JsonKey(name: 'stripe_account_id')
   final String? stripeAccountId;
   @override
-  @JsonKey()
+  @JsonKey(name: 'stripe_connected')
   final bool stripeConnected;
   @override
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   @override
   String toString() {
-    return 'BusinessProfile(id: $id, email: $email, businessName: $businessName, logoUrl: $logoUrl, address: $address, taxId: $taxId, defaultCurrency: $defaultCurrency, defaultPaymentTermsDays: $defaultPaymentTermsDays, stripeAccountId: $stripeAccountId, stripeConnected: $stripeConnected, createdAt: $createdAt)';
+    return 'BusinessProfile(id: $id, email: $email, businessName: $businessName, logoUrl: $logoUrl, address: $address, taxId: $taxId, defaultCurrency: $defaultCurrency, defaultPaymentTermsDays: $defaultPaymentTermsDays, defaultTaxRate: $defaultTaxRate, remindersEnabled: $remindersEnabled, stripeAccountId: $stripeAccountId, stripeConnected: $stripeConnected, createdAt: $createdAt)';
   }
 
   @override
@@ -315,6 +365,10 @@ class _$BusinessProfileImpl implements _BusinessProfile {
                   defaultPaymentTermsDays,
                 ) ||
                 other.defaultPaymentTermsDays == defaultPaymentTermsDays) &&
+            (identical(other.defaultTaxRate, defaultTaxRate) ||
+                other.defaultTaxRate == defaultTaxRate) &&
+            (identical(other.remindersEnabled, remindersEnabled) ||
+                other.remindersEnabled == remindersEnabled) &&
             (identical(other.stripeAccountId, stripeAccountId) ||
                 other.stripeAccountId == stripeAccountId) &&
             (identical(other.stripeConnected, stripeConnected) ||
@@ -335,6 +389,8 @@ class _$BusinessProfileImpl implements _BusinessProfile {
     taxId,
     defaultCurrency,
     defaultPaymentTermsDays,
+    defaultTaxRate,
+    remindersEnabled,
     stripeAccountId,
     stripeConnected,
     createdAt,
@@ -361,15 +417,18 @@ abstract class _BusinessProfile implements BusinessProfile {
   const factory _BusinessProfile({
     required final String id,
     required final String email,
-    final String? businessName,
-    final String? logoUrl,
+    @JsonKey(name: 'business_name') final String? businessName,
+    @JsonKey(name: 'logo_url') final String? logoUrl,
     final String? address,
-    final String? taxId,
-    final String defaultCurrency,
+    @JsonKey(name: 'tax_id') final String? taxId,
+    @JsonKey(name: 'default_currency') final String defaultCurrency,
+    @JsonKey(name: 'default_payment_terms_days')
     final int defaultPaymentTermsDays,
-    final String? stripeAccountId,
-    final bool stripeConnected,
-    required final DateTime createdAt,
+    @JsonKey(name: 'default_tax_rate') final double defaultTaxRate,
+    @JsonKey(name: 'reminders_enabled') final bool remindersEnabled,
+    @JsonKey(name: 'stripe_account_id') final String? stripeAccountId,
+    @JsonKey(name: 'stripe_connected') final bool stripeConnected,
+    @JsonKey(name: 'created_at') required final DateTime createdAt,
   }) = _$BusinessProfileImpl;
 
   factory _BusinessProfile.fromJson(Map<String, dynamic> json) =
@@ -380,22 +439,36 @@ abstract class _BusinessProfile implements BusinessProfile {
   @override
   String get email;
   @override
+  @JsonKey(name: 'business_name')
   String? get businessName;
   @override
+  @JsonKey(name: 'logo_url')
   String? get logoUrl;
   @override
   String? get address;
   @override
+  @JsonKey(name: 'tax_id')
   String? get taxId;
   @override
+  @JsonKey(name: 'default_currency')
   String get defaultCurrency;
   @override
+  @JsonKey(name: 'default_payment_terms_days')
   int get defaultPaymentTermsDays;
   @override
+  @JsonKey(name: 'default_tax_rate')
+  double get defaultTaxRate;
+  @override
+  @JsonKey(name: 'reminders_enabled')
+  bool get remindersEnabled;
+  @override
+  @JsonKey(name: 'stripe_account_id')
   String? get stripeAccountId;
   @override
+  @JsonKey(name: 'stripe_connected')
   bool get stripeConnected;
   @override
+  @JsonKey(name: 'created_at')
   DateTime get createdAt;
 
   /// Create a copy of BusinessProfile

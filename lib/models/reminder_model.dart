@@ -7,9 +7,9 @@ part 'reminder_model.g.dart';
 class Reminder with _$Reminder {
   const factory Reminder({
     required String id,
-    required String invoiceId,
-    required DateTime scheduledAt,
-    DateTime? sentAt,
+    @JsonKey(name: 'invoice_id') required String invoiceId,
+    @JsonKey(name: 'scheduled_at') required DateTime scheduledAt,
+    @JsonKey(name: 'sent_at') DateTime? sentAt,
     required String type, // '3day', '7day', '14day'
   }) = _Reminder;
 

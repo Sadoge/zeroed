@@ -21,7 +21,7 @@ import 'package:zeroed/shared/widgets/app_button.dart';
 import 'package:zeroed/shared/widgets/section_header.dart';
 import 'package:zeroed/shared/widgets/status_badge.dart';
 
-final _currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+import 'package:zeroed/core/utils/currency_utils.dart';
 final _dateFormat = DateFormat('MMM d, y');
 final _shortDate = DateFormat('MMM d');
 
@@ -274,7 +274,7 @@ class _AmountCard extends StatelessWidget {
           Text('TOTAL AMOUNT', style: AppTextStyles.label),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            _currencyFormat.format(invoice.total),
+            currencyFormat(invoice.currency).format(invoice.total),
             style: AppTextStyles.monoLarge,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -313,12 +313,14 @@ class _DetailsSection extends StatelessWidget {
           value:
               '${invoice.lineItems.length} item${invoice.lineItems.length != 1 ? 's' : ''}',
         ),
-        const SizedBox(height: AppSpacing.md),
-        _DetailRow(
-          label: 'Tax',
-          value: _currencyFormat.format(invoice.taxAmount),
-          mono: true,
-        ),
+        if (invoice.taxRate != null && invoice.taxRate! > 0) ...[
+          const SizedBox(height: AppSpacing.md),
+          _DetailRow(
+            label: 'Tax (${invoice.taxRate!.toStringAsFixed(0)}%)',
+            value: currencyFormat(invoice.currency).format(invoice.taxAmount),
+            mono: true,
+          ),
+        ],
       ],
     );
   }

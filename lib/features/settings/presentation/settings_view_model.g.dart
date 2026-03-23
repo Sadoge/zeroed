@@ -24,6 +24,23 @@ final businessProfileProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef BusinessProfileRef = AutoDisposeFutureProviderRef<BusinessProfile?>;
+String _$subscriptionHash() => r'a79fcca3197e4795a7ad7d4f4e206abf285dd961';
+
+/// See also [subscription].
+@ProviderFor(subscription)
+final subscriptionProvider = AutoDisposeFutureProvider<Subscription?>.internal(
+  subscription,
+  name: r'subscriptionProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$subscriptionHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SubscriptionRef = AutoDisposeFutureProviderRef<Subscription?>;
 String _$profileEditorHash() => r'bfcbda161a76418b8ca2739321156572f3a78373';
 
 /// See also [ProfileEditor].

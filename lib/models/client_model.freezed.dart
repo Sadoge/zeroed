@@ -22,12 +22,14 @@ Client _$ClientFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Client {
   String get id => throw _privateConstructorUsedError;
+  @JsonKey(name: 'user_id')
   String get userId => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String get email => throw _privateConstructorUsedError;
   String? get phone => throw _privateConstructorUsedError;
   String? get company => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
+  @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this Client to a JSON map.
@@ -46,13 +48,13 @@ abstract class $ClientCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String userId,
+    @JsonKey(name: 'user_id') String userId,
     String name,
     String email,
     String? phone,
     String? company,
     String? notes,
-    DateTime createdAt,
+    @JsonKey(name: 'created_at') DateTime createdAt,
   });
 }
 
@@ -130,13 +132,13 @@ abstract class _$$ClientImplCopyWith<$Res> implements $ClientCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String userId,
+    @JsonKey(name: 'user_id') String userId,
     String name,
     String email,
     String? phone,
     String? company,
     String? notes,
-    DateTime createdAt,
+    @JsonKey(name: 'created_at') DateTime createdAt,
   });
 }
 
@@ -207,13 +209,13 @@ class __$$ClientImplCopyWithImpl<$Res>
 class _$ClientImpl implements _Client {
   const _$ClientImpl({
     required this.id,
-    required this.userId,
+    @JsonKey(name: 'user_id') required this.userId,
     required this.name,
     required this.email,
     this.phone,
     this.company,
     this.notes,
-    required this.createdAt,
+    @JsonKey(name: 'created_at') required this.createdAt,
   });
 
   factory _$ClientImpl.fromJson(Map<String, dynamic> json) =>
@@ -222,6 +224,7 @@ class _$ClientImpl implements _Client {
   @override
   final String id;
   @override
+  @JsonKey(name: 'user_id')
   final String userId;
   @override
   final String name;
@@ -234,6 +237,7 @@ class _$ClientImpl implements _Client {
   @override
   final String? notes;
   @override
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   @override
@@ -288,13 +292,13 @@ class _$ClientImpl implements _Client {
 abstract class _Client implements Client {
   const factory _Client({
     required final String id,
-    required final String userId,
+    @JsonKey(name: 'user_id') required final String userId,
     required final String name,
     required final String email,
     final String? phone,
     final String? company,
     final String? notes,
-    required final DateTime createdAt,
+    @JsonKey(name: 'created_at') required final DateTime createdAt,
   }) = _$ClientImpl;
 
   factory _Client.fromJson(Map<String, dynamic> json) = _$ClientImpl.fromJson;
@@ -302,6 +306,7 @@ abstract class _Client implements Client {
   @override
   String get id;
   @override
+  @JsonKey(name: 'user_id')
   String get userId;
   @override
   String get name;
@@ -314,6 +319,7 @@ abstract class _Client implements Client {
   @override
   String? get notes;
   @override
+  @JsonKey(name: 'created_at')
   DateTime get createdAt;
 
   /// Create a copy of Client

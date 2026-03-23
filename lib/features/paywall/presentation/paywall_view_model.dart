@@ -3,6 +3,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:zeroed/core/services/subscription_service.dart';
+import 'package:zeroed/features/settings/presentation/settings_view_model.dart';
 
 part 'paywall_view_model.g.dart';
 
@@ -23,6 +24,7 @@ class PaywallNotifier extends _$PaywallNotifier {
     state = const AsyncData(null);
     if (success) {
       ref.invalidate(isProUserProvider);
+      ref.invalidate(subscriptionProvider);
     }
     return success;
   }
@@ -33,6 +35,7 @@ class PaywallNotifier extends _$PaywallNotifier {
     state = const AsyncData(null);
     if (success) {
       ref.invalidate(isProUserProvider);
+      ref.invalidate(subscriptionProvider);
     }
     return success;
   }

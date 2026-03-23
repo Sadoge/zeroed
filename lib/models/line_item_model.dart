@@ -11,8 +11,8 @@ class LineItem with _$LineItem {
     required String id,
     required String description,
     @Default(1) double quantity,
-    required double unitPrice,
-    @Default(0) int sortOrder,
+    @JsonKey(name: 'unit_price') required double unitPrice,
+    @JsonKey(name: 'sort_order') @Default(0) int sortOrder,
   }) = _LineItem;
 
   double get amount => quantity * unitPrice;

@@ -24,7 +24,7 @@ final availablePackagesProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AvailablePackagesRef = AutoDisposeFutureProviderRef<List<Package>>;
-String _$paywallNotifierHash() => r'08651e8db6b7e80ecf69ae64cea5e69a9b455a00';
+String _$paywallNotifierHash() => r'e564b6f79df1a57e908090200c4e2db87e22b291';
 
 /// See also [PaywallNotifier].
 @ProviderFor(PaywallNotifier)

@@ -11,6 +11,9 @@ abstract final class AppConstants {
   /// Default payment terms in days
   static const defaultPaymentTermsDays = 30;
 
+  /// Maximum invoices per month on the free plan
+  static const freeInvoiceLimit = 5;
+
   /// Hive box names
   static const hiveInvoicesBox = 'invoices';
   static const hiveClientsBox = 'clients';

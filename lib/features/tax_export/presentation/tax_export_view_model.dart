@@ -8,6 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:zeroed/features/dashboard/presentation/dashboard_view_model.dart';
 import 'package:zeroed/models/invoice_model.dart';
+import 'package:zeroed/core/utils/currency_utils.dart';
 import 'package:zeroed/models/invoice_status.dart';
 
 part 'tax_export_view_model.g.dart';
@@ -143,7 +144,6 @@ Future<ExportSummary> exportSummary(Ref ref) async {
 
 // ─── PDF Builder ───────────────────────────────────────────────
 
-final _currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 final _dateFormat = DateFormat('MMM d, y');
 
 class TaxExportPdfBuilder {
@@ -196,18 +196,18 @@ class TaxExportPdfBuilder {
             _pdfRow('Total Invoices', '${summary.totalInvoices}', dark, dark),
             pw.SizedBox(height: 10),
             _pdfRow('Total Billed',
-                _currencyFormat.format(summary.totalBilled), dark, dark),
+                currencyFormat().format(summary.totalBilled), dark, dark),
             pw.SizedBox(height: 10),
             _pdfRow('Total Collected',
-                _currencyFormat.format(summary.totalCollected), dark, green),
+                currencyFormat().format(summary.totalCollected), dark, green),
             pw.SizedBox(height: 10),
             _pdfRow('Outstanding',
-                _currencyFormat.format(summary.outstanding), dark, orange),
+                currencyFormat().format(summary.outstanding), dark, orange),
             pw.SizedBox(height: 16),
             pw.Divider(color: border, thickness: 1),
             pw.SizedBox(height: 16),
             _pdfRow('Tax Collected',
-                _currencyFormat.format(summary.taxCollected), dark, accent,
+                currencyFormat().format(summary.taxCollected), dark, accent,
                 bold: true),
             pw.Spacer(),
             pw.Center(
