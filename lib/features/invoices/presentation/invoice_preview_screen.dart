@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:printing/printing.dart';
 
 import 'package:zeroed/core/services/pdf_service.dart';
+import 'package:zeroed/core/services/stripe_service.dart';
 import 'package:zeroed/core/theme/app_colors.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
 import 'package:zeroed/core/theme/app_text_styles.dart';
@@ -95,7 +96,7 @@ class InvoicePreviewScreen extends ConsumerWidget {
                   AppButton(
                     label: 'Send Invoice',
                     icon: LucideIcons.send,
-                    onPressed: () => _handleSend(context, invoice, clientName),
+                    onPressed: () => _handleSend(context, ref, invoice, clientName),
                   ),
                 ],
               ),
@@ -109,11 +110,27 @@ class InvoicePreviewScreen extends ConsumerWidget {
   }
 
   Future<void> _handleSend(
-      BuildContext context, Invoice invoice, String clientName) async {
+      BuildContext context, WidgetRef ref, Invoice invoice, String clientName) async {
+    final clientEmail =
+        '${clientName.toLowerCase().replaceAll(' ', '')}@example.com';
+
+    // Try to generate a Stripe payment link
+    String? paymentLink;
+    try {
+      paymentLink = await ref.read(stripeServiceProvider).createPaymentLink(
+            invoice: invoice,
+            clientName: clientName,
+            clientEmail: clientEmail,
+          );
+    } catch (_) {
+      // Stripe not connected or failed — continue without payment link
+    }
+
     final pdfBytes = await PdfService.instance.generateInvoicePdf(
       invoice: invoice,
       clientName: clientName,
-      clientEmail: '${clientName.toLowerCase().replaceAll(' ', '')}@example.com',
+      clientEmail: clientEmail,
+      paymentLink: paymentLink,
     );
 
     await Printing.sharePdf(

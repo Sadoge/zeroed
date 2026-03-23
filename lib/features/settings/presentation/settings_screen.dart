@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
+import 'package:zeroed/core/services/stripe_service.dart';
 import 'package:zeroed/core/theme/app_colors.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
 import 'package:zeroed/core/theme/app_text_styles.dart';
@@ -33,7 +36,7 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sectionGap),
               _buildProfileSection(context, ref, profileAsync),
               const SizedBox(height: AppSpacing.sectionGap),
-              _buildPaymentSection(),
+              _buildPaymentSection(context, ref, profileAsync),
               const SizedBox(height: AppSpacing.sectionGap),
               _buildDefaultsSection(profileAsync),
               const SizedBox(height: AppSpacing.sectionGap),
@@ -122,81 +125,93 @@ class SettingsScreen extends ConsumerWidget {
 
   // ─── Payment ─────────────────────────────────────────────────
 
-  Widget _buildPaymentSection() {
+  Widget _buildPaymentSection(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<BusinessProfile?> profileAsync,
+  ) {
+    final isConnected = profileAsync.valueOrNull?.stripeConnected ?? false;
+    final statusColor =
+        isConnected ? const Color(0xFF34D399) : AppColors.textMuted;
+    final statusText = isConnected ? 'Connected' : 'Not connected';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SectionHeader(title: 'PAYMENT'),
         const SizedBox(height: AppSpacing.md),
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: AppColors.bgCard,
-            borderRadius: AppRadius.cardBorder,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF635BFF),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'S',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+        GestureDetector(
+          onTap: () => _handleStripeConnect(context, ref, isConnected),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColors.bgCard,
+              borderRadius: AppRadius.cardBorder,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF635BFF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'S',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Stripe',
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Stripe',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0xFF34D399),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: statusColor,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Connected',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: const Color(0xFF34D399),
+                            const SizedBox(width: 4),
+                            Text(
+                              statusText,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: statusColor,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const Icon(LucideIcons.chevronRight,
-                  size: AppSizing.iconSm, color: AppColors.textMuted),
-            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const Icon(LucideIcons.chevronRight,
+                    size: AppSizing.iconSm, color: AppColors.textMuted),
+              ],
+            ),
           ),
         ),
       ],
@@ -354,6 +369,32 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  // ─── Stripe Connect ──────────────────────────────────────────
+
+  Future<void> _handleStripeConnect(
+    BuildContext context,
+    WidgetRef ref,
+    bool isConnected,
+  ) async {
+    if (isConnected) return;
+
+    try {
+      final url = await ref
+          .read(stripeServiceProvider)
+          .createConnectOnboardingLink();
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to start Stripe setup: $e'),
+            backgroundColor: AppColors.bgCard,
+          ),
+        );
+      }
+    }
   }
 
   // ─── Edit Profile Sheet ──────────────────────────────────────

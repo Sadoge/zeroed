@@ -19,6 +19,7 @@ class PdfService {
     required String clientName,
     required String clientEmail,
     String? businessName,
+    String? paymentLink,
   }) async {
     final pdf = pw.Document();
 
@@ -183,24 +184,46 @@ class PdfService {
 
               pw.SizedBox(height: 32),
 
-              // Pay button placeholder
-              pw.Container(
-                width: double.infinity,
-                height: 44,
-                alignment: pw.Alignment.center,
-                decoration: pw.BoxDecoration(
-                  color: accentColor,
-                  borderRadius: pw.BorderRadius.circular(8),
-                ),
-                child: pw.Text(
-                  'Pay Now — ${_currencyFormat.format(invoice.total)}',
-                  style: pw.TextStyle(
-                    fontSize: 14,
-                    fontWeight: pw.FontWeight.bold,
-                    color: darkColor,
+              // Pay button
+              if (paymentLink != null)
+                pw.UrlLink(
+                  destination: paymentLink,
+                  child: pw.Container(
+                    width: double.infinity,
+                    height: 44,
+                    alignment: pw.Alignment.center,
+                    decoration: pw.BoxDecoration(
+                      color: accentColor,
+                      borderRadius: pw.BorderRadius.circular(8),
+                    ),
+                    child: pw.Text(
+                      'Pay Now — ${_currencyFormat.format(invoice.total)}',
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                        color: darkColor,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                pw.Container(
+                  width: double.infinity,
+                  height: 44,
+                  alignment: pw.Alignment.center,
+                  decoration: pw.BoxDecoration(
+                    color: accentColor,
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.Text(
+                    'Pay Now — ${_currencyFormat.format(invoice.total)}',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: darkColor,
+                    ),
                   ),
                 ),
-              ),
 
               pw.Spacer(),
 
