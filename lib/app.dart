@@ -15,6 +15,7 @@ class ZeroedApp extends ConsumerStatefulWidget {
 
 class _ZeroedAppState extends ConsumerState<ZeroedApp> {
   final _appRouter = AppRouter();
+  bool _didCheckSession = false;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +27,17 @@ class _ZeroedAppState extends ConsumerState<ZeroedApp> {
         }
       });
     });
+
+    // On first build, redirect to main shell if user already has a session.
+    if (!_didCheckSession) {
+      _didCheckSession = true;
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _appRouter.replaceAll([const MainShellRoute()]);
+        });
+      }
+    }
 
     return MaterialApp.router(
       title: 'Zeroed',

@@ -6,10 +6,11 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:zeroed/core/theme/app_colors.dart';
-import 'package:zeroed/models/client_model.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
 import 'package:zeroed/core/theme/app_text_styles.dart';
+import 'package:zeroed/features/clients/presentation/client_list_view_model.dart';
 import 'package:zeroed/features/invoices/presentation/create_invoice_view_model.dart';
+import 'package:zeroed/models/client_model.dart';
 import 'package:zeroed/models/line_item_model.dart';
 import 'package:zeroed/shared/widgets/app_back_button.dart';
 import 'package:zeroed/shared/widgets/app_button.dart';
@@ -102,9 +103,7 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
 
   Widget _buildClientSearch(CreateInvoiceState state) {
     return GestureDetector(
-      onTap: () {
-        // TODO: open client picker
-      },
+      onTap: () => _showClientPickerSheet(),
       child: Container(
         height: AppSizing.inputHeight,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -120,15 +119,29 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
               color: AppColors.textMuted,
             ),
             const SizedBox(width: 10),
-            Text(
-              state.selectedClient?.name ?? 'Search clients...',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: state.selectedClient != null
-                    ? AppColors.textPrimary
-                    : AppColors.textMuted,
+            Expanded(
+              child: Text(
+                state.selectedClient?.name ?? 'Search clients...',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: state.selectedClient != null
+                      ? AppColors.textPrimary
+                      : AppColors.textMuted,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (state.selectedClient != null)
+              GestureDetector(
+                onTap: () => ref
+                    .read(createInvoiceViewModelProvider.notifier)
+                    .clearClient(),
+                child: Icon(
+                  LucideIcons.x,
+                  size: AppSizing.iconSm,
+                  color: AppColors.textMuted,
+                ),
+              ),
           ],
         ),
       ),
@@ -136,29 +149,50 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   }
 
   Widget _buildRecentClients(CreateInvoiceViewModel vm) {
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      children: [
-        _ClientChip(
-          label: 'Acme Corp',
-          onTap: () => _selectDemoClient(vm, 'Acme Corp'),
-        ),
-        _ClientChip(
-          label: 'Bright Studio',
-          onTap: () => _selectDemoClient(vm, 'Bright Studio'),
-        ),
-        _AddClientChip(onTap: () {
-          // TODO: add new client
-        }),
-      ],
+    final clientsAsync = ref.watch(clientListProvider);
+    return clientsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (clients) {
+        final recent = clients.take(3).toList();
+        return Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            ...recent.map((c) => _ClientChip(
+                  label: c.name,
+                  onTap: () => vm.selectClient(c),
+                )),
+          ],
+        );
+      },
     );
   }
 
-  void _selectDemoClient(CreateInvoiceViewModel vm, String name) {
-    // Hardcoded demo — will use real client data later.
-    vm.selectClient(
-      _demoClient(name),
+  void _showClientPickerSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.card)),
+      ),
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.85,
+        expand: false,
+        builder: (ctx, scrollController) => _ClientPickerBody(
+          scrollController: scrollController,
+          onSelect: (client) {
+            ref
+                .read(createInvoiceViewModelProvider.notifier)
+                .selectClient(client);
+            Navigator.of(ctx).pop();
+          },
+        ),
+      ),
     );
   }
 
@@ -402,36 +436,147 @@ class _ClientChip extends StatelessWidget {
   }
 }
 
-class _AddClientChip extends StatelessWidget {
-  const _AddClientChip({required this.onTap});
+class _ClientPickerBody extends ConsumerStatefulWidget {
+  const _ClientPickerBody({
+    required this.scrollController,
+    required this.onSelect,
+  });
 
-  final VoidCallback onTap;
+  final ScrollController scrollController;
+  final ValueChanged<Client> onSelect;
+
+  @override
+  ConsumerState<_ClientPickerBody> createState() => _ClientPickerBodyState();
+}
+
+class _ClientPickerBodyState extends ConsumerState<_ClientPickerBody> {
+  String _query = '';
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: AppRadius.pillBorder,
-          border: Border.all(color: AppColors.accent),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(LucideIcons.plus, size: 14, color: AppColors.accent),
-            const SizedBox(width: 4),
-            Text(
-              'New',
+    final clientsAsync = ref.watch(clientListProvider);
+
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Select Client', style: AppTextStyles.heading3),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            height: AppSizing.inputHeight,
+            child: TextField(
+              onChanged: (v) => setState(() => _query = v),
               style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.accent,
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
+              cursorColor: AppColors.accent,
+              decoration: InputDecoration(
+                hintText: 'Search...',
+                hintStyle: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppColors.textMuted,
+                ),
+                prefixIcon: Icon(
+                  LucideIcons.search,
+                  size: AppSizing.iconSm,
+                  color: AppColors.textMuted,
+                ),
+                filled: true,
+                fillColor: AppColors.bgInset,
+                border: OutlineInputBorder(
+                  borderRadius: AppRadius.inputBorder,
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Expanded(
+            child: clientsAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (_, __) => Center(
+                child: Text(
+                  'Failed to load clients',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+              data: (clients) {
+                final filtered = _query.isEmpty
+                    ? clients
+                    : clients
+                        .where((c) => c.name
+                            .toLowerCase()
+                            .contains(_query.toLowerCase()))
+                        .toList();
+
+                if (filtered.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No clients found',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  controller: widget.scrollController,
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpacing.xs),
+                  itemBuilder: (_, i) {
+                    final client = filtered[i];
+                    return GestureDetector(
+                      onTap: () => widget.onSelect(client),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.bgInset,
+                          borderRadius: AppRadius.inputBorder,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              client.name,
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              client.email,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -689,12 +834,3 @@ class _SheetField extends StatelessWidget {
   }
 }
 
-// ─── Demo helper (temporary) ─────────────────────────────────
-
-Client _demoClient(String name) => Client(
-      id: name.toLowerCase().replaceAll(' ', '_'),
-      userId: 'demo',
-      name: name,
-      email: '${name.toLowerCase().replaceAll(' ', '')}@example.com',
-      createdAt: DateTime.now(),
-    );

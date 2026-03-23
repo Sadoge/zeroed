@@ -1,10 +1,13 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'package:zeroed/core/router/app_router.dart';
 import 'package:zeroed/core/theme/app_colors.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
+import 'package:zeroed/shared/widgets/app_fab.dart';
 
 /// Bottom navigation bar with pill-style tabs and gradient fade.
 ///
@@ -31,6 +34,11 @@ class BottomNavShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: child,
+      floatingActionButton: currentIndex == 0
+          ? AppFab(
+              onPressed: () => context.router.push(const CreateInvoiceRoute()),
+            )
+          : null,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -83,8 +91,9 @@ class BottomNavShell extends StatelessWidget {
                           _tabs[i].label,
                           style: GoogleFonts.jetBrainsMono(
                             fontSize: 10,
-                            fontWeight:
-                                isActive ? FontWeight.w600 : FontWeight.w500,
+                            fontWeight: isActive
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                             letterSpacing: 0.5,
                             color: isActive
                                 ? AppColors.textInverted
