@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -56,7 +57,10 @@ class BottomNavShell extends StatelessWidget {
               final isActive = i == currentIndex;
               return Expanded(
                 child: GestureDetector(
-                  onTap: () => onTap(i),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onTap(i);
+                  },
                   behavior: HitTestBehavior.opaque,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),

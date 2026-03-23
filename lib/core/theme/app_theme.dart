@@ -5,8 +5,26 @@ import 'app_colors.dart';
 import 'app_spacing.dart';
 
 abstract final class AppTheme {
+  /// Standard page transition: subtle fade.
+  static const pageTransitionDuration = Duration(milliseconds: 250);
+
+  static Widget fadeTransition(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return FadeTransition(opacity: animation, child: child);
+  }
+
   static ThemeData get darkTheme {
     return ThemeData(
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+        },
+      ),
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.bgPrimary,
       colorScheme: const ColorScheme.dark(

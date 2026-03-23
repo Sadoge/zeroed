@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:zeroed/core/theme/app_colors.dart';
@@ -19,7 +20,7 @@ import 'package:zeroed/core/theme/app_spacing.dart';
 ///   → Add Line Item
 enum AppButtonVariant { primary, secondary, danger, ghost }
 
-class AppButton extends StatelessWidget {
+class AppButton extends StatefulWidget {
   const AppButton({
     super.key,
     required this.label,
@@ -44,65 +45,103 @@ class AppButton extends StatelessWidget {
   final bool expand;
 
   @override
+  State<AppButton> createState() => _AppButtonState();
+}
+
+class _AppButtonState extends State<AppButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 80),
+    );
+    _scale = Tween(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final config = _resolveConfig();
 
     return GestureDetector(
-      onTap: isLoading ? null : onPressed,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: expand ? double.infinity : null,
-        height: config.height,
-        padding: expand
-            ? null
-            : const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-        decoration: BoxDecoration(
-          color: color ?? config.fill,
-          borderRadius: BorderRadius.circular(config.radius),
-          border: config.borderColor != null
-              ? Border.all(color: config.borderColor!)
-              : null,
-        ),
-        child: Center(
-          child: isLoading
-              ? SizedBox(
-                  width: AppSizing.iconMd,
-                  height: AppSizing.iconMd,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: config.foreground,
-                  ),
-                )
-              : Row(
-                  mainAxisSize:
-                      expand ? MainAxisSize.max : MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(
-                        icon,
-                        size: config.iconSize,
-                        color: config.foreground,
-                      ),
-                      SizedBox(width: config.gap),
-                    ],
-                    Text(
-                      label,
-                      style: GoogleFonts.inter(
-                        fontSize: config.fontSize,
-                        fontWeight: config.fontWeight,
-                        color: config.foreground,
-                      ),
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        if (!widget.isLoading) {
+          HapticFeedback.lightImpact();
+          widget.onPressed?.call();
+        }
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scale,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: widget.expand ? double.infinity : null,
+          height: config.height,
+          padding: widget.expand
+              ? null
+              : const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+          decoration: BoxDecoration(
+            color: widget.color ?? config.fill,
+            borderRadius: BorderRadius.circular(config.radius),
+            border: config.borderColor != null
+                ? Border.all(color: config.borderColor!)
+                : null,
+          ),
+          child: Center(
+            child: widget.isLoading
+                ? SizedBox(
+                    width: AppSizing.iconMd,
+                    height: AppSizing.iconMd,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: config.foreground,
                     ),
-                  ],
-                ),
+                  )
+                : Row(
+                    mainAxisSize:
+                        widget.expand ? MainAxisSize.max : MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (widget.icon != null) ...[
+                        Icon(
+                          widget.icon,
+                          size: config.iconSize,
+                          color: config.foreground,
+                        ),
+                        SizedBox(width: config.gap),
+                      ],
+                      Text(
+                        widget.label,
+                        style: GoogleFonts.inter(
+                          fontSize: config.fontSize,
+                          fontWeight: config.fontWeight,
+                          color: config.foreground,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
       ),
     );
   }
 
   _ButtonConfig _resolveConfig() {
-    return switch (variant) {
+    return switch (widget.variant) {
       AppButtonVariant.primary => _ButtonConfig(
           fill: AppColors.accent,
           foreground: AppColors.textInverted,
