@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:zeroed/app.dart';
 import 'package:zeroed/core/env/env.dart';
+import 'package:zeroed/core/services/hive_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,7 @@ Future<void> main() async {
   );
 
   await Hive.initFlutter();
+  await HiveService.instance.init();
 
   runApp(
     const ProviderScope(

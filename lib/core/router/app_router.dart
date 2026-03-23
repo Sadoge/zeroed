@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
+import 'package:zeroed/core/router/auth_guard.dart';
 import 'package:zeroed/features/auth/presentation/sign_in_screen.dart';
 import 'package:zeroed/features/auth/presentation/sign_up_screen.dart';
 import 'package:zeroed/features/onboarding/presentation/onboarding_screen.dart';
@@ -30,6 +31,7 @@ class AppRouter extends RootStackRouter {
         // Main shell with bottom nav tabs
         AutoRoute(
           page: MainShellRoute.page,
+          guards: [AuthGuard()],
           children: [
             AutoRoute(page: DashboardRoute.page),
             AutoRoute(page: ClientListRoute.page),
@@ -37,15 +39,20 @@ class AppRouter extends RootStackRouter {
           ],
         ),
 
-        // Full-screen routes
-        AutoRoute(page: CreateInvoiceRoute.page),
+        // Full-screen routes (all behind auth)
+        AutoRoute(
+          page: CreateInvoiceRoute.page,
+          guards: [AuthGuard()],
+        ),
         AutoRoute(
           page: InvoiceDetailRoute.page,
           path: '/invoice/:id',
+          guards: [AuthGuard()],
         ),
         AutoRoute(
           page: InvoicePreviewRoute.page,
           path: '/invoice/:id/preview',
+          guards: [AuthGuard()],
         ),
         AutoRoute(page: PaywallRoute.page),
         AutoRoute(page: TaxExportRoute.page),
