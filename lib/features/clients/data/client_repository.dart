@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:zeroed/core/services/hive_service.dart';
 import 'package:zeroed/core/services/supabase_service.dart';
@@ -11,7 +12,7 @@ class ClientRepository {
   ClientRepository(this._hive, this._supabase);
 
   final HiveService _hive;
-  final dynamic _supabase;
+  final SupabaseClient _supabase;
 
   /// Fetch all clients for the current user.
   /// Tries Supabase first, falls back to Hive cache.
@@ -20,7 +21,7 @@ class ClientRepository {
       final response =
           await _supabase.from('clients').select().order('name');
       final clients = (response as List)
-          .map((json) => Client.fromJson(json as Map<String, dynamic>))
+          .map((json) => Client.fromJson(json))
           .toList();
 
       // Cache locally

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:zeroed/core/services/hive_service.dart';
@@ -14,7 +15,7 @@ class ReminderRepository {
   ReminderRepository(this._hive, this._supabase);
 
   final HiveService _hive;
-  final dynamic _supabase;
+  final SupabaseClient _supabase;
 
   /// Schedule default reminders (3, 7, 14 days) after an invoice is sent.
   Future<List<Reminder>> scheduleReminders({
@@ -63,7 +64,7 @@ class ReminderRepository {
           .eq('invoice_id', invoiceId)
           .order('scheduled_at');
       return (response as List)
-          .map((json) => Reminder.fromJson(json as Map<String, dynamic>))
+          .map((json) => Reminder.fromJson(json))
           .toList();
     } catch (_) {
       // Fallback: filter locally cached reminders

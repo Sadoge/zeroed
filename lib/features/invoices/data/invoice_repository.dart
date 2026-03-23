@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:zeroed/core/services/hive_service.dart';
 import 'package:zeroed/core/services/supabase_service.dart';
@@ -11,7 +12,7 @@ class InvoiceRepository {
   InvoiceRepository(this._hive, this._supabase);
 
   final HiveService _hive;
-  final dynamic _supabase;
+  final SupabaseClient _supabase;
 
   /// Fetch all invoices for the current user.
   Future<List<Invoice>> getInvoices() async {
@@ -21,7 +22,7 @@ class InvoiceRepository {
           .select('*, line_items(*)')
           .order('created_at', ascending: false);
       final invoices = (response as List)
-          .map((json) => Invoice.fromJson(json as Map<String, dynamic>))
+          .map((json) => Invoice.fromJson(json))
           .toList();
 
       for (final invoice in invoices) {
@@ -44,7 +45,7 @@ class InvoiceRepository {
           .select('*, line_items(*)')
           .eq('id', id)
           .single();
-      final invoice = Invoice.fromJson(response as Map<String, dynamic>);
+      final invoice = Invoice.fromJson(response);
       await _hive.put(_hive.invoicesBox, id, invoice.toJson());
       return invoice;
     } catch (_) {

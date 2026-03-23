@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:zeroed/core/services/hive_service.dart';
 import 'package:zeroed/core/services/supabase_service.dart';
@@ -11,7 +12,7 @@ class SettingsRepository {
   SettingsRepository(this._hive, this._supabase);
 
   final HiveService _hive;
-  final dynamic _supabase;
+  final SupabaseClient _supabase;
 
   static const _profileKey = 'current_profile';
 
@@ -31,7 +32,7 @@ class SettingsRepository {
       if (response == null) return _cachedProfile();
 
       final profile =
-          BusinessProfile.fromJson(response as Map<String, dynamic>);
+          BusinessProfile.fromJson(response);
       await _hive.put(_hive.profileBox, _profileKey, profile.toJson());
       return profile;
     } catch (_) {
