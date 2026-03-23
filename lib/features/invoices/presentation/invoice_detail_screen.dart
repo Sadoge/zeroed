@@ -11,6 +11,8 @@ import 'package:zeroed/core/theme/app_colors.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
 import 'package:zeroed/core/theme/app_text_styles.dart';
 import 'package:zeroed/features/dashboard/presentation/dashboard_view_model.dart';
+import 'package:zeroed/features/invoices/data/invoice_repository.dart';
+import 'package:zeroed/features/reminders/data/reminder_repository.dart';
 import 'package:zeroed/models/invoice_model.dart';
 import 'package:zeroed/models/invoice_status.dart';
 import 'package:zeroed/models/line_item_model.dart';
@@ -79,7 +81,7 @@ class InvoiceDetailScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sectionGap),
               _DetailsSection(invoice: invoice, clientName: cName),
               const SizedBox(height: AppSpacing.sectionGap),
-              _ActionsSection(invoice: invoice, clientName: cName),
+              _ActionsSection(invoice: invoice, clientName: cName, ref: ref),
               const SizedBox(height: AppSpacing.xxl),
             ],
           ),
@@ -365,9 +367,14 @@ class _DetailRow extends StatelessWidget {
 // ─── Actions Section ──────────────────────────────────────────
 
 class _ActionsSection extends StatelessWidget {
-  const _ActionsSection({required this.invoice, required this.clientName});
+  const _ActionsSection({
+    required this.invoice,
+    required this.clientName,
+    required this.ref,
+  });
   final Invoice invoice;
   final String clientName;
+  final WidgetRef ref;
 
   @override
   Widget build(BuildContext context) {
@@ -378,9 +385,7 @@ class _ActionsSection extends StatelessWidget {
             label: 'Send Reminder',
             icon: LucideIcons.send,
             variant: AppButtonVariant.danger,
-            onPressed: () {
-              // TODO: send reminder
-            },
+            onPressed: () => _sendReminder(context),
           ),
           const SizedBox(height: AppSpacing.md),
         ],
@@ -389,9 +394,7 @@ class _ActionsSection extends StatelessWidget {
           icon: LucideIcons.circleCheck,
           variant: AppButtonVariant.secondary,
           color: null,
-          onPressed: () {
-            // TODO: mark as paid
-          },
+          onPressed: () => _markAsPaid(context),
         ),
         const SizedBox(height: AppSpacing.md),
         Row(
@@ -399,9 +402,7 @@ class _ActionsSection extends StatelessWidget {
           children: [
             _TextAction(
               label: 'Duplicate',
-              onTap: () {
-                // TODO: duplicate invoice
-              },
+              onTap: () => _duplicate(context),
             ),
             _dot(),
             _TextAction(
@@ -412,14 +413,111 @@ class _ActionsSection extends StatelessWidget {
             _TextAction(
               label: 'Delete',
               color: const Color(0xFFEF4444),
-              onTap: () {
-                // TODO: delete invoice
-              },
+              onTap: () => _delete(context),
             ),
           ],
         ),
       ],
     );
+  }
+
+  Future<void> _sendReminder(BuildContext context) async {
+    final clientEmail =
+        '${clientName.toLowerCase().replaceAll(' ', '')}@example.com';
+    try {
+      await ref.read(reminderRepositoryProvider).sendReminderEmail(
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            clientName: clientName,
+            clientEmail: clientEmail,
+            amount: invoice.total,
+            currency: invoice.currency,
+          );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reminder sent')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send reminder')),
+        );
+      }
+    }
+  }
+
+  Future<void> _markAsPaid(BuildContext context) async {
+    final now = DateTime.now();
+    final updated = invoice.copyWith(
+      status: InvoiceStatus.paid,
+      paidAt: now,
+      updatedAt: now,
+    );
+    await ref.read(invoiceRepositoryProvider).updateInvoice(updated);
+    ref.invalidate(allInvoicesProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invoice marked as paid')),
+      );
+      context.router.maybePop();
+    }
+  }
+
+  Future<void> _duplicate(BuildContext context) async {
+    final newInvoice = invoice.copyWith(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      status: InvoiceStatus.draft,
+      invoiceNumber: '${invoice.invoiceNumber}-COPY',
+      sentAt: null,
+      paidAt: null,
+      stripePaymentLink: null,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await ref.read(invoiceRepositoryProvider).createInvoice(newInvoice);
+    ref.invalidate(allInvoicesProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invoice duplicated')),
+      );
+    }
+  }
+
+  Future<void> _delete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        title: Text('Delete Invoice',
+            style: AppTextStyles.heading3),
+        content: Text(
+          'Are you sure you want to delete ${invoice.invoiceNumber}?',
+          style: GoogleFonts.inter(
+              fontSize: 14, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Cancel',
+                style: GoogleFonts.inter(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('Delete',
+                style: GoogleFonts.inter(color: const Color(0xFFEF4444))),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(invoiceRepositoryProvider).deleteInvoice(invoice.id);
+      ref.invalidate(allInvoicesProvider);
+      if (context.mounted) {
+        context.router.maybePop();
+      }
+    }
   }
 
   Widget _dot() {

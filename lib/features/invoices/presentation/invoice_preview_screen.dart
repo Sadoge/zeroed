@@ -12,7 +12,10 @@ import 'package:zeroed/core/theme/app_colors.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
 import 'package:zeroed/core/theme/app_text_styles.dart';
 import 'package:zeroed/features/dashboard/presentation/dashboard_view_model.dart';
+import 'package:zeroed/features/invoices/data/invoice_repository.dart';
+import 'package:zeroed/features/reminders/data/reminder_repository.dart';
 import 'package:zeroed/models/invoice_model.dart';
+import 'package:zeroed/models/invoice_status.dart';
 import 'package:zeroed/models/line_item_model.dart';
 import 'package:zeroed/shared/widgets/app_back_button.dart';
 import 'package:zeroed/shared/widgets/app_button.dart';
@@ -126,6 +129,45 @@ class InvoicePreviewScreen extends ConsumerWidget {
       // Stripe not connected or failed — continue without payment link
     }
 
+    // Update invoice status to sent
+    final now = DateTime.now();
+    final sentInvoice = invoice.copyWith(
+      status: InvoiceStatus.sent,
+      sentAt: now,
+      stripePaymentLink: paymentLink,
+      updatedAt: now,
+    );
+    await ref.read(invoiceRepositoryProvider).updateInvoice(sentInvoice);
+
+    // Schedule reminders (3, 7, 14 days)
+    try {
+      await ref.read(reminderRepositoryProvider).scheduleReminders(
+            invoiceId: invoice.id,
+            sentAt: now,
+          );
+    } catch (_) {
+      // Non-critical — reminders can be retried
+    }
+
+    // Send invoice email
+    try {
+      await ref.read(reminderRepositoryProvider).sendInvoiceEmail(
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            clientName: clientName,
+            clientEmail: clientEmail,
+            amount: invoice.total,
+            currency: invoice.currency,
+            paymentLink: paymentLink,
+          );
+    } catch (_) {
+      // Email send failed — still share PDF as fallback
+    }
+
+    // Refresh invoice list
+    ref.invalidate(allInvoicesProvider);
+
+    // Share PDF
     final pdfBytes = await PdfService.instance.generateInvoicePdf(
       invoice: invoice,
       clientName: clientName,
