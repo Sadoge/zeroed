@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:zeroed/core/constants/app_constants.dart';
+import 'package:zeroed/features/dashboard/presentation/dashboard_view_model.dart';
 import 'package:zeroed/features/invoices/data/invoice_repository.dart';
 import 'package:zeroed/features/settings/presentation/settings_view_model.dart';
 import 'package:zeroed/models/client_model.dart';
@@ -84,13 +85,13 @@ class CreateInvoiceViewModel extends _$CreateInvoiceViewModel {
 
   double get total => subtotal + taxAmount;
 
-  Future<Invoice?> saveInvoice() async {
+  Future<Invoice?> saveInvoice({required String userId}) async {
     if (state.lineItems.isEmpty) return null;
 
     final now = DateTime.now();
     final invoice = Invoice(
       id: _uuid.v4(),
-      userId: '', // Will be filled by repository / Supabase RLS
+      userId: userId,
       clientId: state.selectedClient?.id,
       invoiceNumber: 'INV-${now.millisecondsSinceEpoch.toString().substring(7)}',
       currency: state.currency,
@@ -106,6 +107,7 @@ class CreateInvoiceViewModel extends _$CreateInvoiceViewModel {
     try {
       final saved =
           await ref.read(invoiceRepositoryProvider).createInvoice(invoice);
+      ref.invalidate(allInvoicesProvider);
       state = state.copyWith(isSaving: false);
       return saved;
     } catch (e) {

@@ -10,23 +10,25 @@ import 'package:zeroed/core/services/pdf_service.dart';
 import 'package:zeroed/core/theme/app_colors.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
 import 'package:zeroed/core/theme/app_text_styles.dart';
+import 'package:zeroed/features/clients/data/client_repository.dart';
 import 'package:zeroed/features/dashboard/presentation/dashboard_view_model.dart';
 import 'package:zeroed/features/invoices/data/invoice_repository.dart';
 import 'package:zeroed/features/reminders/data/reminder_repository.dart';
+import 'package:zeroed/models/client_model.dart';
 import 'package:zeroed/models/invoice_model.dart';
 import 'package:zeroed/models/invoice_status.dart';
-import 'package:zeroed/models/line_item_model.dart';
 import 'package:zeroed/shared/widgets/app_back_button.dart';
 import 'package:zeroed/shared/widgets/app_button.dart';
 import 'package:zeroed/shared/widgets/section_header.dart';
 import 'package:zeroed/shared/widgets/status_badge.dart';
 
 import 'package:zeroed/core/utils/currency_utils.dart';
+
 final _dateFormat = DateFormat('MMM d, y');
 final _shortDate = DateFormat('MMM d');
 
 @RoutePage()
-class InvoiceDetailScreen extends ConsumerWidget {
+class InvoiceDetailScreen extends ConsumerStatefulWidget {
   const InvoiceDetailScreen({
     super.key,
     @PathParam('id') required this.invoiceId,
@@ -35,35 +37,67 @@ class InvoiceDetailScreen extends ConsumerWidget {
   final String invoiceId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final invoicesAsync = ref.watch(recentInvoicesProvider);
+  ConsumerState<InvoiceDetailScreen> createState() =>
+      _InvoiceDetailScreenState();
+}
 
-    return invoicesAsync.when(
-      loading: () => const Scaffold(
-        backgroundColor: AppColors.bgPrimary,
-        body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
-      ),
-      error: (_, __) => Scaffold(
-        backgroundColor: AppColors.bgPrimary,
-        body: Center(
-          child: Text('Error loading invoice',
-              style: AppTextStyles.body.copyWith(color: AppColors.textMuted)),
-        ),
-      ),
-      data: (invoices) {
-        final invoice = invoices.firstWhere(
-          (i) => i.id == invoiceId,
-          orElse: () => _fallbackInvoice(),
-        );
-        final cName = clientNameForId(invoice.clientId);
+class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
+  Invoice? _invoice;
+  Client? _client;
+  bool _loading = true;
 
-        return _buildContent(context, ref, invoice, cName);
-      },
-    );
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
   }
 
-  Widget _buildContent(
-      BuildContext context, WidgetRef ref, Invoice invoice, String cName) {
+  Future<void> _loadData() async {
+    final invoice = await ref
+        .read(invoiceRepositoryProvider)
+        .getInvoice(widget.invoiceId);
+
+    Client? client;
+    if (invoice?.clientId != null) {
+      final clients = await ref.read(clientRepositoryProvider).getClients();
+      client = clients.where((c) => c.id == invoice!.clientId).firstOrNull;
+    }
+
+    if (mounted) {
+      setState(() {
+        _invoice = invoice;
+        _client = client;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: AppColors.bgPrimary,
+        body: Center(
+            child: CircularProgressIndicator(color: AppColors.accent)),
+      );
+    }
+
+    final invoice = _invoice;
+    if (invoice == null) {
+      return Scaffold(
+        backgroundColor: AppColors.bgPrimary,
+        body: Center(
+          child: Text(
+            'Invoice not found',
+            style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+          ),
+        ),
+      );
+    }
+
+    final clientName = _client?.name ?? 'Unknown';
+    final clientEmail = _client?.email ?? '';
+
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
@@ -73,15 +107,20 @@ class InvoiceDetailScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppSpacing.lg),
-              _Header(invoice: invoice, clientName: cName),
+              _Header(invoice: invoice, clientName: clientName),
               const SizedBox(height: AppSpacing.sectionGap),
               _Timeline(invoice: invoice),
               const SizedBox(height: AppSpacing.sectionGap),
               _AmountCard(invoice: invoice),
               const SizedBox(height: AppSpacing.sectionGap),
-              _DetailsSection(invoice: invoice, clientName: cName),
+              _DetailsSection(invoice: invoice, clientName: clientName),
               const SizedBox(height: AppSpacing.sectionGap),
-              _ActionsSection(invoice: invoice, clientName: cName, ref: ref),
+              _ActionsSection(
+                invoice: invoice,
+                clientName: clientName,
+                clientEmail: clientEmail,
+                ref: ref,
+              ),
               const SizedBox(height: AppSpacing.xxl),
             ],
           ),
@@ -153,18 +192,20 @@ class _Timeline extends StatelessWidget {
   static const _steps = ['Created', 'Sent', 'Overdue', 'Paid'];
 
   int get _activeIndex => switch (invoice.status) {
-        InvoiceStatus.draft => 0,
-        InvoiceStatus.sent => 1,
-        InvoiceStatus.viewed => 1,
-        InvoiceStatus.overdue => 2,
-        InvoiceStatus.paid => 3,
-      };
+    InvoiceStatus.draft => 0,
+    InvoiceStatus.sent => 1,
+    InvoiceStatus.viewed => 1,
+    InvoiceStatus.overdue => 2,
+    InvoiceStatus.paid => 3,
+  };
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.lg),
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
         color: AppColors.bgCard,
         borderRadius: AppRadius.cardBorder,
@@ -245,7 +286,9 @@ class _Timeline extends StatelessWidget {
   }
 
   Color _stepColor(int index, bool isComplete, bool isCurrent) {
-    if (index == 2 && (isCurrent || isComplete) && invoice.status == InvoiceStatus.overdue) {
+    if (index == 2 &&
+        (isCurrent || isComplete) &&
+        invoice.status == InvoiceStatus.overdue) {
       return AppColors.statusOverdue;
     }
     if (isComplete) return AppColors.statusPaid;
@@ -264,7 +307,9 @@ class _AmountCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl, vertical: AppSpacing.xxl),
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.xxl,
+      ),
       decoration: BoxDecoration(
         color: AppColors.bgCard,
         borderRadius: AppRadius.cardBorder,
@@ -345,7 +390,10 @@ class _DetailRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
         ),
         Text(
           value,
@@ -372,10 +420,12 @@ class _ActionsSection extends StatelessWidget {
   const _ActionsSection({
     required this.invoice,
     required this.clientName,
+    required this.clientEmail,
     required this.ref,
   });
   final Invoice invoice;
   final String clientName;
+  final String clientEmail;
   final WidgetRef ref;
 
   @override
@@ -402,10 +452,7 @@ class _ActionsSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _TextAction(
-              label: 'Duplicate',
-              onTap: () => _duplicate(context),
-            ),
+            _TextAction(label: 'Duplicate', onTap: () => _duplicate(context)),
             _dot(),
             _TextAction(
               label: 'Download PDF',
@@ -424,10 +471,10 @@ class _ActionsSection extends StatelessWidget {
   }
 
   Future<void> _sendReminder(BuildContext context) async {
-    final clientEmail =
-        '${clientName.toLowerCase().replaceAll(' ', '')}@example.com';
     try {
-      await ref.read(reminderRepositoryProvider).sendReminderEmail(
+      await ref
+          .read(reminderRepositoryProvider)
+          .sendReminderEmail(
             invoiceId: invoice.id,
             invoiceNumber: invoice.invoiceNumber,
             clientName: clientName,
@@ -436,9 +483,9 @@ class _ActionsSection extends StatelessWidget {
             currency: invoice.currency,
           );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reminder sent')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Reminder sent')));
       }
     } catch (_) {
       if (context.mounted) {
@@ -456,12 +503,14 @@ class _ActionsSection extends StatelessWidget {
       paidAt: now,
       updatedAt: now,
     );
+
     await ref.read(invoiceRepositoryProvider).updateInvoice(updated);
     ref.invalidate(allInvoicesProvider);
+
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invoice marked as paid')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Invoice marked as paid')));
       context.router.maybePop();
     }
   }
@@ -480,9 +529,9 @@ class _ActionsSection extends StatelessWidget {
     await ref.read(invoiceRepositoryProvider).createInvoice(newInvoice);
     ref.invalidate(allInvoicesProvider);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invoice duplicated')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Invoice duplicated')));
     }
   }
 
@@ -491,23 +540,28 @@ class _ActionsSection extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: Text('Delete Invoice',
-            style: AppTextStyles.heading3),
+        title: Text('Delete Invoice', style: AppTextStyles.heading3),
         content: Text(
           'Are you sure you want to delete ${invoice.invoiceNumber}?',
           style: GoogleFonts.inter(
-              fontSize: 14, color: AppColors.textSecondary),
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Cancel',
-                style: GoogleFonts.inter(color: AppColors.textSecondary)),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(color: AppColors.textSecondary),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Delete',
-                style: GoogleFonts.inter(color: const Color(0xFFEF4444))),
+            child: Text(
+              'Delete',
+              style: GoogleFonts.inter(color: const Color(0xFFEF4444)),
+            ),
           ),
         ],
       ),
@@ -540,8 +594,7 @@ class _ActionsSection extends StatelessWidget {
     final pdfBytes = await PdfService.instance.generateInvoicePdf(
       invoice: invoice,
       clientName: clientName,
-      clientEmail:
-          '${clientName.toLowerCase().replaceAll(' ', '')}@example.com',
+      clientEmail: clientEmail,
     );
     await Printing.sharePdf(
       bytes: pdfBytes,
@@ -551,11 +604,7 @@ class _ActionsSection extends StatelessWidget {
 }
 
 class _TextAction extends StatelessWidget {
-  const _TextAction({
-    required this.label,
-    required this.onTap,
-    this.color,
-  });
+  const _TextAction({required this.label, required this.onTap, this.color});
   final String label;
   final VoidCallback onTap;
   final Color? color;
@@ -576,16 +625,4 @@ class _TextAction extends StatelessWidget {
   }
 }
 
-// ─── Fallback ─────────────────────────────────────────────────
 
-Invoice _fallbackInvoice() => Invoice(
-      id: 'unknown',
-      userId: 'demo',
-      invoiceNumber: 'INV-000',
-      lineItems: const [
-        LineItem(id: '1', description: 'Service', unitPrice: 0),
-      ],
-      dueDate: DateTime.now(),
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );

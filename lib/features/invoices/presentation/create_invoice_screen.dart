@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'package:zeroed/core/router/app_router.dart';
+import 'package:zeroed/core/services/supabase_service.dart';
 import 'package:zeroed/core/theme/app_colors.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
 import 'package:zeroed/core/theme/app_text_styles.dart';
@@ -402,9 +404,10 @@ class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   // ─── Preview ────────────────────────────────────────────────
 
   Future<void> _handlePreview(CreateInvoiceViewModel vm) async {
-    final invoice = await vm.saveInvoice();
+    final userId = ref.read(currentUserProvider)?.id ?? '';
+    final invoice = await vm.saveInvoice(userId: userId);
     if (invoice != null && mounted) {
-      // TODO: navigate to preview screen
+      context.router.push(InvoicePreviewRoute(invoiceId: invoice.id));
     }
   }
 }

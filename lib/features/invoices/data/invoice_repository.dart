@@ -60,7 +60,7 @@ class InvoiceRepository {
 
     try {
       // Insert invoice (without line items field)
-      final invoiceJson = invoice.toJson()..remove('lineItems');
+      final invoiceJson = invoice.toJson()..remove('line_items');
       await _supabase.from('invoices').insert(invoiceJson);
 
       // Insert line items
@@ -85,7 +85,7 @@ class InvoiceRepository {
   Future<void> updateInvoice(Invoice invoice) async {
     await _hive.put(_hive.invoicesBox, invoice.id, invoice.toJson());
     try {
-      final invoiceJson = invoice.toJson()..remove('lineItems');
+      final invoiceJson = invoice.toJson()..remove('line_items');
       await _supabase
           .from('invoices')
           .update(invoiceJson)

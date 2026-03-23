@@ -28,7 +28,6 @@ class PdfService {
     final mutedColor = PdfColor.fromHex('#64748B');
     final labelColor = PdfColor.fromHex('#94A3B8');
     final borderColor = PdfColor.fromHex('#E2E8F0');
-    final accentColor = PdfColor.fromHex('#22D3EE');
 
     pdf.addPage(
       pw.Page(
@@ -53,12 +52,14 @@ class PdfService {
                           color: darkColor,
                         ),
                       ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        businessName ?? 'Your Business Name',
-                        style: pw.TextStyle(
-                            fontSize: 11, color: mutedColor),
-                      ),
+                      if (businessName != null && businessName.isNotEmpty) ...[
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          businessName,
+                          style: pw.TextStyle(
+                              fontSize: 11, color: mutedColor),
+                        ),
+                      ],
                     ],
                   ),
                   pw.Column(
@@ -145,13 +146,13 @@ class PdfService {
                   child: pw.Column(
                     children: [
                       _buildTotalRow('Subtotal',
-                          currencyFormat(invoice.currency).format(invoice.subtotal),
+                          formatCurrency(invoice.subtotal, invoice.currency),
                           mutedColor, bodyColor),
                       if (invoice.taxRate != null && invoice.taxRate! > 0) ...[
                         pw.SizedBox(height: 6),
                         _buildTotalRow(
                             'Tax (${invoice.taxRate!.toStringAsFixed(0)}%)',
-                            currencyFormat(invoice.currency).format(invoice.taxAmount),
+                            formatCurrency(invoice.taxAmount, invoice.currency),
                             mutedColor, bodyColor),
                       ],
                       pw.SizedBox(height: 8),
@@ -170,7 +171,7 @@ class PdfService {
                             ),
                           ),
                           pw.Text(
-                            currencyFormat(invoice.currency).format(invoice.total),
+                            formatCurrency(invoice.total, invoice.currency),
                             style: pw.TextStyle(
                               fontSize: 18,
                               fontWeight: pw.FontWeight.bold,
@@ -183,49 +184,6 @@ class PdfService {
                   ),
                 ),
               ),
-
-              pw.SizedBox(height: 32),
-
-              // Pay button
-              if (paymentLink != null)
-                pw.UrlLink(
-                  destination: paymentLink,
-                  child: pw.Container(
-                    width: double.infinity,
-                    height: 44,
-                    alignment: pw.Alignment.center,
-                    decoration: pw.BoxDecoration(
-                      color: accentColor,
-                      borderRadius: pw.BorderRadius.circular(8),
-                    ),
-                    child: pw.Text(
-                      'Pay Now — ${currencyFormat(invoice.currency).format(invoice.total)}',
-                      style: pw.TextStyle(
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold,
-                        color: darkColor,
-                      ),
-                    ),
-                  ),
-                )
-              else
-                pw.Container(
-                  width: double.infinity,
-                  height: 44,
-                  alignment: pw.Alignment.center,
-                  decoration: pw.BoxDecoration(
-                    color: accentColor,
-                    borderRadius: pw.BorderRadius.circular(8),
-                  ),
-                  child: pw.Text(
-                    'Pay Now — ${currencyFormat(invoice.currency).format(invoice.total)}',
-                    style: pw.TextStyle(
-                      fontSize: 14,
-                      fontWeight: pw.FontWeight.bold,
-                      color: darkColor,
-                    ),
-                  ),
-                ),
 
               pw.Spacer(),
 
@@ -322,7 +280,7 @@ class PdfService {
           pw.SizedBox(
             width: 70,
             child: pw.Text(
-              currencyFormat(currency).format(item.unitPrice),
+              formatCurrency(item.unitPrice, currency),
               style: pw.TextStyle(fontSize: 12, color: mutedColor),
               textAlign: pw.TextAlign.right,
             ),
@@ -330,7 +288,7 @@ class PdfService {
           pw.SizedBox(
             width: 80,
             child: pw.Text(
-              currencyFormat(currency).format(item.amount),
+              formatCurrency(item.amount, currency),
               style: pw.TextStyle(
                   fontSize: 12,
                   fontWeight: pw.FontWeight.normal,

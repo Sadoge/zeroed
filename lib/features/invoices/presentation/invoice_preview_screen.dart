@@ -11,9 +11,12 @@ import 'package:zeroed/core/services/stripe_service.dart';
 import 'package:zeroed/core/theme/app_colors.dart';
 import 'package:zeroed/core/theme/app_spacing.dart';
 import 'package:zeroed/core/theme/app_text_styles.dart';
+import 'package:zeroed/features/clients/data/client_repository.dart';
 import 'package:zeroed/features/dashboard/presentation/dashboard_view_model.dart';
 import 'package:zeroed/features/invoices/data/invoice_repository.dart';
 import 'package:zeroed/features/reminders/data/reminder_repository.dart';
+import 'package:zeroed/features/settings/presentation/settings_view_model.dart';
+import 'package:zeroed/models/client_model.dart';
 import 'package:zeroed/models/invoice_model.dart';
 import 'package:zeroed/models/invoice_status.dart';
 import 'package:zeroed/models/line_item_model.dart';
@@ -21,10 +24,11 @@ import 'package:zeroed/shared/widgets/app_back_button.dart';
 import 'package:zeroed/shared/widgets/app_button.dart';
 
 import 'package:zeroed/core/utils/currency_utils.dart';
+
 final _dateFormat = DateFormat('MMM d, y');
 
 @RoutePage()
-class InvoicePreviewScreen extends ConsumerWidget {
+class InvoicePreviewScreen extends ConsumerStatefulWidget {
   const InvoicePreviewScreen({
     super.key,
     @PathParam('id') required this.invoiceId,
@@ -33,26 +37,69 @@ class InvoicePreviewScreen extends ConsumerWidget {
   final String invoiceId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final invoicesAsync = ref.watch(recentInvoicesProvider);
+  ConsumerState<InvoicePreviewScreen> createState() =>
+      _InvoicePreviewScreenState();
+}
 
-    return invoicesAsync.when(
-      loading: () => const Scaffold(
+class _InvoicePreviewScreenState extends ConsumerState<InvoicePreviewScreen> {
+  Invoice? _invoice;
+  Client? _client;
+  String? _businessName;
+  bool _loading = true;
+  bool _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final invoice = await ref
+        .read(invoiceRepositoryProvider)
+        .getInvoice(widget.invoiceId);
+
+    Client? client;
+    if (invoice?.clientId != null) {
+      final clients = await ref.read(clientRepositoryProvider).getClients();
+      client = clients.where((c) => c.id == invoice!.clientId).firstOrNull;
+    }
+
+    final profile = await ref.read(businessProfileProvider.future);
+
+    if (mounted) {
+      setState(() {
+        _invoice = invoice;
+        _client = client;
+        _businessName = profile?.businessName;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
         backgroundColor: AppColors.bgPrimary,
         body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
-      ),
-      error: (_, __) => const Scaffold(
-        backgroundColor: AppColors.bgPrimary,
-        body: Center(child: Text('Error loading invoice')),
-      ),
-      data: (invoices) {
-        final invoice = invoices.firstWhere(
-          (i) => i.id == invoiceId,
-          orElse: () => _demoInvoice(),
-        );
-        final clientName = clientNameForId(invoice.clientId);
+      );
+    }
 
-        return Scaffold(
+    final invoice = _invoice;
+    if (invoice == null) {
+      return Scaffold(
+        backgroundColor: AppColors.bgPrimary,
+        body: Center(
+          child: Text('Invoice not found', style: AppTextStyles.body),
+        ),
+      );
+    }
+
+    final clientName = _client?.name ?? 'Unknown';
+    final clientEmail = _client?.email ?? '';
+
+    return Scaffold(
       backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
         child: Column(
@@ -60,12 +107,15 @@ class InvoicePreviewScreen extends ConsumerWidget {
             // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, 0),
+                AppSpacing.xl,
+                AppSpacing.lg,
+                AppSpacing.xl,
+                0,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  AppBackButton(
-                      onTap: () => context.router.maybePop()),
+                  AppBackButton(onTap: () => context.router.maybePop()),
                   Text('Preview', style: AppTextStyles.heading2),
                   const SizedBox(width: AppSizing.iconButtonSize),
                 ],
@@ -79,6 +129,8 @@ class InvoicePreviewScreen extends ConsumerWidget {
                 child: _InvoiceDocument(
                   invoice: invoice,
                   clientName: clientName,
+                  clientEmail: clientEmail,
+                  businessName: _businessName,
                 ),
               ),
             ),
@@ -86,7 +138,11 @@ class InvoicePreviewScreen extends ConsumerWidget {
             // Action buttons
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xxl),
+                AppSpacing.xl,
+                AppSpacing.md,
+                AppSpacing.xl,
+                AppSpacing.xxl,
+              ),
               child: Column(
                 children: [
                   AppButton(
@@ -99,7 +155,9 @@ class InvoicePreviewScreen extends ConsumerWidget {
                   AppButton(
                     label: 'Send Invoice',
                     icon: LucideIcons.send,
-                    onPressed: () => _handleSend(context, ref, invoice, clientName),
+                    isLoading: _isSending,
+                    onPressed: () =>
+                        _handleSend(invoice, clientName, clientEmail),
                   ),
                 ],
               ),
@@ -107,78 +165,87 @@ class InvoicePreviewScreen extends ConsumerWidget {
           ],
         ),
       ),
-        );
-      },
     );
   }
 
   Future<void> _handleSend(
-      BuildContext context, WidgetRef ref, Invoice invoice, String clientName) async {
-    final clientEmail =
-        '${clientName.toLowerCase().replaceAll(' ', '')}@example.com';
-
-    // Try to generate a Stripe payment link
-    String? paymentLink;
+    Invoice invoice,
+    String clientName,
+    String clientEmail,
+  ) async {
+    setState(() => _isSending = true);
     try {
-      paymentLink = await ref.read(stripeServiceProvider).createPaymentLink(
-            invoice: invoice,
-            clientName: clientName,
-            clientEmail: clientEmail,
-          );
-    } catch (_) {
-      // Stripe not connected or failed — continue without payment link
+      // Try to generate a Stripe payment link
+      String? paymentLink;
+      try {
+        paymentLink = await ref
+            .read(stripeServiceProvider)
+            .createPaymentLink(
+              invoice: invoice,
+              clientName: clientName,
+              clientEmail: clientEmail,
+            );
+      } catch (_) {
+        // Stripe not connected or failed — continue without payment link
+      }
+
+      // Update invoice status to sent
+      final now = DateTime.now();
+      final sentInvoice = invoice.copyWith(
+        status: InvoiceStatus.sent,
+        sentAt: now,
+        stripePaymentLink: paymentLink,
+        updatedAt: now,
+      );
+      await ref.read(invoiceRepositoryProvider).updateInvoice(sentInvoice);
+
+      // Schedule reminders (3, 7, 14 days)
+      try {
+        await ref
+            .read(reminderRepositoryProvider)
+            .scheduleReminders(invoiceId: invoice.id, sentAt: now);
+      } catch (_) {
+        // Non-critical — reminders can be retried
+      }
+
+      // Send invoice email
+      if (clientEmail.isNotEmpty) {
+        try {
+          await ref
+              .read(reminderRepositoryProvider)
+              .sendInvoiceEmail(
+                invoiceId: invoice.id,
+                invoiceNumber: invoice.invoiceNumber,
+                clientName: clientName,
+                clientEmail: clientEmail,
+                amount: invoice.total,
+                currency: invoice.currency,
+                paymentLink: paymentLink,
+              );
+        } catch (_) {
+          // Email send failed — still share PDF as fallback
+        }
+      }
+
+      // Refresh invoice list
+      ref.invalidate(allInvoicesProvider);
+
+      // Share PDF
+      final pdfBytes = await PdfService.instance.generateInvoicePdf(
+        invoice: invoice,
+        clientName: clientName,
+        clientEmail: clientEmail,
+        businessName: _businessName,
+        paymentLink: paymentLink,
+      );
+
+      await Printing.sharePdf(
+        bytes: pdfBytes,
+        filename: '${invoice.invoiceNumber}.pdf',
+      );
+    } finally {
+      if (mounted) setState(() => _isSending = false);
     }
-
-    // Update invoice status to sent
-    final now = DateTime.now();
-    final sentInvoice = invoice.copyWith(
-      status: InvoiceStatus.sent,
-      sentAt: now,
-      stripePaymentLink: paymentLink,
-      updatedAt: now,
-    );
-    await ref.read(invoiceRepositoryProvider).updateInvoice(sentInvoice);
-
-    // Schedule reminders (3, 7, 14 days)
-    try {
-      await ref.read(reminderRepositoryProvider).scheduleReminders(
-            invoiceId: invoice.id,
-            sentAt: now,
-          );
-    } catch (_) {
-      // Non-critical — reminders can be retried
-    }
-
-    // Send invoice email
-    try {
-      await ref.read(reminderRepositoryProvider).sendInvoiceEmail(
-            invoiceId: invoice.id,
-            invoiceNumber: invoice.invoiceNumber,
-            clientName: clientName,
-            clientEmail: clientEmail,
-            amount: invoice.total,
-            currency: invoice.currency,
-            paymentLink: paymentLink,
-          );
-    } catch (_) {
-      // Email send failed — still share PDF as fallback
-    }
-
-    // Refresh invoice list
-    ref.invalidate(allInvoicesProvider);
-
-    // Share PDF
-    final pdfBytes = await PdfService.instance.generateInvoicePdf(
-      invoice: invoice,
-      clientName: clientName,
-      clientEmail: clientEmail,
-      paymentLink: paymentLink,
-    );
-
-    await Printing.sharePdf(
-      bytes: pdfBytes,
-      filename: '${invoice.invoiceNumber}.pdf',
-    );
   }
 }
 
@@ -190,10 +257,14 @@ class _InvoiceDocument extends StatelessWidget {
   const _InvoiceDocument({
     required this.invoice,
     required this.clientName,
+    required this.clientEmail,
+    this.businessName,
   });
 
   final Invoice invoice;
   final String clientName;
+  final String clientEmail;
+  final String? businessName;
 
   static const _dark = Color(0xFF0A0F1C);
   static const _body = Color(0xFF0F172A);
@@ -251,11 +322,13 @@ class _InvoiceDocument extends StatelessWidget {
                 color: _dark,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Your Business Name',
-              style: GoogleFonts.inter(fontSize: 11, color: _muted),
-            ),
+            if (businessName != null && businessName!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                businessName!,
+                style: GoogleFonts.inter(fontSize: 11, color: _muted),
+              ),
+            ],
           ],
         ),
         Column(
@@ -312,11 +385,13 @@ class _InvoiceDocument extends StatelessWidget {
             color: _dark,
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          '${clientName.toLowerCase().replaceAll(' ', '')}@example.com',
-          style: GoogleFonts.inter(fontSize: 11, color: _muted),
-        ),
+        if (clientEmail.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            clientEmail,
+            style: GoogleFonts.inter(fontSize: 11, color: _muted),
+          ),
+        ],
       ],
     );
   }
@@ -337,33 +412,42 @@ class _InvoiceDocument extends StatelessWidget {
         ),
         SizedBox(
           width: 36,
-          child: Text('QTY',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1,
-                  color: _label)),
+          child: Text(
+            'QTY',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
+              color: _label,
+            ),
+          ),
         ),
         SizedBox(
           width: 60,
-          child: Text('RATE',
-              textAlign: TextAlign.right,
-              style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1,
-                  color: _label)),
+          child: Text(
+            'RATE',
+            textAlign: TextAlign.right,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
+              color: _label,
+            ),
+          ),
         ),
         SizedBox(
           width: 72,
-          child: Text('AMOUNT',
-              textAlign: TextAlign.right,
-              style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1,
-                  color: _label)),
+          child: Text(
+            'AMOUNT',
+            textAlign: TextAlign.right,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
+              color: _label,
+            ),
+          ),
         ),
       ],
     );
@@ -378,7 +462,10 @@ class _InvoiceDocument extends StatelessWidget {
             child: Text(
               item.description,
               style: GoogleFonts.inter(
-                  fontSize: 12, fontWeight: FontWeight.w500, color: _body),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: _body,
+              ),
             ),
           ),
           SizedBox(
@@ -392,7 +479,7 @@ class _InvoiceDocument extends StatelessWidget {
           SizedBox(
             width: 60,
             child: Text(
-              currencyFormat(invoice.currency).format(item.unitPrice),
+              formatCurrency(item.unitPrice, invoice.currency),
               textAlign: TextAlign.right,
               style: GoogleFonts.jetBrainsMono(fontSize: 12, color: _muted),
             ),
@@ -400,10 +487,13 @@ class _InvoiceDocument extends StatelessWidget {
           SizedBox(
             width: 72,
             child: Text(
-              currencyFormat(invoice.currency).format(item.amount),
+              formatCurrency(item.amount, invoice.currency),
               textAlign: TextAlign.right,
               style: GoogleFonts.jetBrainsMono(
-                  fontSize: 12, fontWeight: FontWeight.w500, color: _body),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: _body,
+              ),
             ),
           ),
         ],
@@ -418,12 +508,16 @@ class _InvoiceDocument extends StatelessWidget {
         width: 180,
         child: Column(
           children: [
-            _buildTotalRow('Subtotal', currencyFormat(invoice.currency).format(invoice.subtotal)),
+            _buildTotalRow(
+              'Subtotal',
+              formatCurrency(invoice.subtotal, invoice.currency),
+            ),
             if (invoice.taxRate != null && invoice.taxRate! > 0) ...[
               const SizedBox(height: 6),
               _buildTotalRow(
-                  'Tax (${invoice.taxRate!.toStringAsFixed(0)}%)',
-                  currencyFormat(invoice.currency).format(invoice.taxAmount)),
+                'Tax (${invoice.taxRate!.toStringAsFixed(0)}%)',
+                formatCurrency(invoice.taxAmount, invoice.currency),
+              ),
             ],
             const SizedBox(height: 8),
             const Divider(color: _border, height: 1),
@@ -440,7 +534,7 @@ class _InvoiceDocument extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  currencyFormat(invoice.currency).format(invoice.total),
+                  formatCurrency(invoice.total, invoice.currency),
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -459,11 +553,15 @@ class _InvoiceDocument extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style: GoogleFonts.inter(fontSize: 12, color: _muted)),
-        Text(value,
-            style: GoogleFonts.jetBrainsMono(
-                fontSize: 12, fontWeight: FontWeight.w500, color: _body)),
+        Text(label, style: GoogleFonts.inter(fontSize: 12, color: _muted)),
+        Text(
+          value,
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: _body,
+          ),
+        ),
       ],
     );
   }
@@ -478,7 +576,7 @@ class _InvoiceDocument extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          'Pay Now — ${currencyFormat(invoice.currency).format(invoice.total)}',
+          'Pay Now — ${formatCurrency(invoice.total, invoice.currency)}',
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -499,16 +597,3 @@ class _InvoiceDocument extends StatelessWidget {
     );
   }
 }
-
-// Fallback demo invoice
-Invoice _demoInvoice() => Invoice(
-      id: 'demo',
-      userId: 'demo',
-      invoiceNumber: 'INV-000',
-      lineItems: const [
-        LineItem(id: '1', description: 'Service', unitPrice: 100),
-      ],
-      dueDate: DateTime.now().add(const Duration(days: 30)),
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
