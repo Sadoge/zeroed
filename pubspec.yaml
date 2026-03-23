@@ -46,6 +46,9 @@ dependencies:
   path_provider: ^2.1.0
   share_plus: ^10.0.1
 
+  # Payments / Subscriptions
+  purchases_flutter: ^8.1.0
+
   # PDF
   pdf: ^3.10.0
   printing: ^5.12.0
